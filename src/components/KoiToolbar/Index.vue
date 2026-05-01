@@ -2,24 +2,28 @@
   <!-- 使用方式：<KoiToolbar v-model:showSearch="showSearch" @refreshTable="handleTableData"></KoiToolbar> -->
   <!-- 不显示全屏按钮 :showMaximize="false" -->
   <div class="koi-toolbar">
-    <el-row>
+    <el-row class="koi-toolbar-row">
       <el-tooltip :content="showSearch ? $t('button.hideSearch') : $t('button.displaySearch') " placement="top">
-        <el-button circle icon="search" @click="toggleSearch()" />
+        <button type="button" class="koi-toolbar-btn" @click="toggleSearch()">
+          <el-icon><Search /></el-icon>
+        </button>
       </el-tooltip>
       <el-tooltip :content="$t('button.refresh')" placement="top">
-        <el-button circle icon="refresh" @click="handleRefresh()" />
+        <button type="button" class="koi-toolbar-btn" @click="handleRefresh()">
+          <el-icon><RefreshRight /></el-icon>
+        </button>
       </el-tooltip>
-      <el-button v-if="showMaximize" circle @click="handleMaximize()">
+      <button v-if="showMaximize" type="button" class="koi-toolbar-btn" @click="handleMaximize()">
         <el-icon v-if="!isMaximize"><FullScreen /></el-icon>
         <el-icon v-else><Aim /></el-icon>
-      </el-button>
+      </button>
     </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick } from "vue";
-import { FullScreen, Aim } from "@element-plus/icons-vue";
+import { FullScreen, Aim, Search, RefreshRight } from "@element-plus/icons-vue";
 import useGlobalStore from "@/stores/modules/global.ts";
 
 interface IToolbarProps {
@@ -65,5 +69,39 @@ const isMaximize = computed(() => globalStore.maximize);
 <style lang="scss" scoped>
 .koi-toolbar {
   margin-left: auto;
+}
+
+.koi-toolbar-row {
+  gap: 8px;
+}
+
+.koi-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--el-color-primary);
+    border-color: color-mix(in srgb, var(--el-color-primary) 38%, var(--el-border-color));
+    background: color-mix(in srgb, var(--el-color-primary-light-9) 78%, var(--el-fill-color-light));
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  :deep(.el-icon) {
+    font-size: 16px;
+  }
 }
 </style>

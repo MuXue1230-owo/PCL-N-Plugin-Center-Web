@@ -2,7 +2,7 @@
   <el-tabs
     v-model="activeTab"
     type="card"
-    class="layout-tabs"
+    class="layout-tabs layout-tabs--glass-cards"
     @tab-remove="removeTab"
     @tab-click="handleTabClick"
     @contextmenu.prevent="handleTabsMenuParent($event)"
@@ -12,7 +12,7 @@
       <!-- 加载图标 -->
       <template #label>
         <div
-          class="flex flex-justify-center flex-items-center select-none"
+          class="tab-label-inner flex flex-justify-center flex-items-center select-none"
           @contextmenu.prevent="handleTabsMenuChildren(item.path, $event)"
         >
           <KoiGlobalIcon class="m-r-6px" v-show="item.icon" :name="item.icon" size="16"></KoiGlobalIcon>
@@ -199,95 +199,145 @@ const handleTabsMenuChildren = (path: any, value: any) => {
 </script>
 
 <style lang="scss" scoped>
-.layout-tabs {
+.layout-tabs--glass-cards {
+  /** 卡片头高度；须与下列 height:auto + min-height 配合，否则会与 header padding 抢空间导致标签不靠中 */
+  --el-tabs-header-height: 42px;
   border-top: 1px solid var(--el-border-color-lighter);
-  // 色弱模式
   background-color: var(--el-bg-color);
-}
 
-:deep(.el-tabs__item:first-child) {
-  margin-left: 8px;
-}
-
-:deep(.el-tabs__item) {
-  height: 28px;
-  margin-left: 6px;
-  margin-top: 0px !important;
-  margin-bottom: 1px;
-  padding: 0px 14px !important;
-  font-size: 14px;
-  font-weight: 500;
-  color: #161718;
-  @apply dark:text-#E0E0E0;
-  border: 1px solid #D3D6DB !important;
-  border-radius: 4px;
-  user-select: none;
-  outline: none !important; /* 移除默认 focus 外框 */
-  box-shadow: none !important; /* 移除所有阴影效果 */
-  .is-top {
-    border-bottom: none !important;
+  :deep(.el-tabs__header) {
+    margin: 0;
+    height: auto !important;
+    min-height: var(--el-tabs-header-height);
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
   }
 
-  // 设置鼠标悬停时的样式
-  &:hover {
+  :deep(.el-tabs__nav-wrap::after) {
+    display: none;
+  }
+
+  :deep(.el-tabs__nav-wrap) {
+    display: flex;
+    align-items: center;
+    min-height: var(--el-tabs-header-height);
+  }
+
+  :deep(.el-tabs__nav-scroll) {
+    display: flex;
+    align-items: center;
+  }
+
+  :deep(.el-tabs__nav) {
+    border: none !important;
+    align-items: center;
+  }
+
+  :deep(.el-tabs__item) {
+    height: 32px;
+    margin: 0 5px !important;
+    margin-top: 0 !important;
+    padding: 0 12px !important;
+    font-family: var(--el-font-family);
+    font-size: var(--el-font-size-base);
+    font-weight: 500;
+    line-height: 32px;
+    color: var(--el-text-color-primary);
+    border: 1px solid var(--el-border-color) !important;
+    border-radius: 8px !important;
+    user-select: none;
+    outline: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box;
+    background-color: transparent;
+
+    .tab-label-inner {
+      gap: 2px;
+    }
+
+    &.is-active {
+      color: var(--el-color-primary);
+      font-weight: 500;
+      background: var(--el-color-primary-light-9);
+      border: 1px solid var(--el-color-primary) !important;
+    }
+  }
+
+  :deep(.el-tabs__item:first-child) {
+    margin-left: 2px !important;
+  }
+
+  /** 可滚动时仅保留略大于按钮宽度的内边距，避免标签被挡 */
+  :deep(.el-tabs__nav-wrap.is-scrollable) {
+    padding: 0 34px !important;
+  }
+
+  :deep(.el-tabs__nav-prev),
+  :deep(.el-tabs__nav-next) {
+    z-index: 2;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--el-border-color) !important;
+    box-sizing: border-box;
+    background-color: var(--el-bg-color) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--el-font-family);
+    font-size: var(--el-font-size-base);
+    line-height: 1 !important;
+    color: var(--el-text-color-secondary);
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  :deep(.el-tabs__nav-prev) {
+    left: 0 !important;
+  }
+
+  :deep(.el-tabs__nav-next) {
+    right: 0 !important;
+  }
+
+  :deep(.el-tabs__nav-prev:not(.is-disabled):hover),
+  :deep(.el-tabs__nav-next:not(.is-disabled):hover) {
     color: var(--el-color-primary);
-    // 边框选择颜色
-    border: 1px solid var(--el-color-primary) !important;
-    // background: var(--el-color-primary-light-9);
+    border-color: var(--el-color-primary) !important;
+    background-color: var(--el-fill-color-light);
   }
 
-  // 设置鼠标选择的样式[可用来定制不同配色的主题]
-  &.is-active {
-    color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
+  :deep(.el-tabs__nav-prev.is-disabled),
+  :deep(.el-tabs__nav-next.is-disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
 
-    // 边框选择颜色
+  :deep(.el-tabs__item:focus),
+  :deep(.el-tabs__item:focus-visible),
+  :deep(.el-tabs__item:focus-within) {
+    outline: none !important;
+    box-shadow: none !important;
+    border: 1px solid var(--el-border-color) !important;
+  }
+
+  :deep(.el-tabs__item[aria-selected="true"]:focus),
+  :deep(.el-tabs__item[aria-selected="false"]:focus) {
+    outline: none !important;
+    box-shadow: none !important;
+    border: 1px solid var(--el-border-color) !important;
+  }
+
+  :deep(.el-tabs__item.is-active:focus) {
+    outline: none !important;
+    box-shadow: none !important;
     border: 1px solid var(--el-color-primary) !important;
   }
-}
-
-:deep(.el-tabs__header) {
-  margin: 0;
-  padding-bottom: 0px !important;
-  display: flex;
-  align-items: center;
-}
-
-// 覆盖多余边框
-:deep(.el-tabs__nav) {
-  border: none !important;
-}
-
-:deep(.el-tabs__nav-prev),
-:deep(.el-tabs__nav-next) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  line-height: normal;
-}
-
-// 全局覆盖Element Plus的focus样式
-:deep(.el-tabs__item:focus),
-:deep(.el-tabs__item:focus-visible),
-:deep(.el-tabs__item:focus-within) {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 1px solid #D3D6DB !important; /* 保持原有的边框样式 */
-}
-
-// 确保在右键菜单激活时也不出现focus样式
-:deep(.el-tabs__item[aria-selected="true"]:focus),
-:deep(.el-tabs__item[aria-selected="false"]:focus) {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 1px solid #D3D6DB !important; /* 保持原有的边框样式 */
-}
-
-// 激活状态下的focus样式覆盖
-:deep(.el-tabs__item.is-active:focus) {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 1px solid var(--el-color-primary) !important; /* 保持激活状态的边框样式 */
 }
 </style>

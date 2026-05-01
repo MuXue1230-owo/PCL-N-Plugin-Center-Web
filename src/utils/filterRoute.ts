@@ -12,7 +12,7 @@ export function generateRoutes(data: any[], parentId: any) {
   const routeList: any = [];
   for (var i = 0; i < data.length; i++) {
     if (data[i] && !router.hasRoute(data[i].path)) {
-      if (data[i].parentId === parentId) {
+      if (String(data[i].parentId) === String(parentId)) {
         // console.log("component", data[i].component);
         const componentTemplate = data[i]?.component;
         const route: any = {

@@ -204,6 +204,56 @@ const handleTabsMenuChildren = (path: any, value: any) => {
   border-top: 1px solid var(--el-border-color-lighter);
   // 色弱模式
   background-color: var(--el-bg-color);
+
+  /** 可滚动时仅保留略大于按钮宽度的内边距 */
+  :deep(.el-tabs__nav-wrap.is-scrollable) {
+    padding: 0 34px !important;
+  }
+
+  :deep(.el-tabs__nav-prev),
+  :deep(.el-tabs__nav-next) {
+    z-index: 2;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--el-border-color) !important;
+    box-sizing: border-box;
+    background-color: var(--el-bg-color) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--el-font-family);
+    font-size: var(--el-font-size-base);
+    line-height: 1 !important;
+    color: var(--el-text-color-secondary);
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  :deep(.el-tabs__nav-prev) {
+    left: 0 !important;
+  }
+
+  :deep(.el-tabs__nav-next) {
+    right: 0 !important;
+  }
+
+  :deep(.el-tabs__nav-prev:not(.is-disabled):hover),
+  :deep(.el-tabs__nav-next:not(.is-disabled):hover) {
+    color: var(--el-color-primary);
+    border-color: var(--el-color-primary) !important;
+    background-color: var(--el-fill-color-light);
+  }
+
+  :deep(.el-tabs__nav-prev.is-disabled),
+  :deep(.el-tabs__nav-next.is-disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
 }
 
 :deep(.el-tabs__item:first-child) {
@@ -215,10 +265,10 @@ const handleTabsMenuChildren = (path: any, value: any) => {
   margin-left: 4px;
   margin-top: 6px !important;
   padding: 0px 14px !important;
-  font-size: 14px;
+  font-family: var(--el-font-family);
+  font-size: var(--el-font-size-base);
   font-weight: 500;
-  color: #161718;
-  @apply dark:text-#E0E0E0;
+  color: var(--el-text-color-primary);
   border-radius: 6px;
   border: none !important;
   user-select: none;
@@ -228,8 +278,7 @@ const handleTabsMenuChildren = (path: any, value: any) => {
   // 设置鼠标悬停时的样式
   &:hover {
     color: var(--el-color-primary);
-    background-color: #F4F4F5;
-    @apply dark:bg-#202122;
+    background-color: var(--el-fill-color-light);
   }
 
   // 设置鼠标选择的样式[可用来定制不同配色的主题]
@@ -270,7 +319,7 @@ const handleTabsMenuChildren = (path: any, value: any) => {
     width: 1px;
     height: 16px;
     margin: auto;
-    background: #D3D6DB !important;
+    background: var(--el-border-color-light) !important;
     transition: opacity 0.3s ease;
     opacity: 1 !important; /* 默认显示 */
   }
@@ -326,6 +375,7 @@ const handleTabsMenuChildren = (path: any, value: any) => {
 
 :deep(.el-tabs__header) {
   margin: 0;
+  padding: 0 6px;
   padding-bottom: 0px !important;
   display: flex;
   align-items: center;
@@ -334,15 +384,6 @@ const handleTabsMenuChildren = (path: any, value: any) => {
 // 覆盖多余边框
 :deep(.el-tabs__nav) {
   border: none !important;
-}
-
-:deep(.el-tabs__nav-prev),
-:deep(.el-tabs__nav-next) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  line-height: normal;
 }
 
 // 全局覆盖Element Plus的focus样式

@@ -223,9 +223,10 @@ class Yu {
   delete<T = Result>(url: string): Promise<T> {
     return this.instance.delete(url);
   }
-  // 图片上传
+  // 图片上传（必须关闭请求节流：FormData 在节流键中无法区分内容，并发多图会误判为同一请求）
   upload<T = Result>(url: string, formData?: object): Promise<T> {
     return this.instance.post(url, formData, {
+      throttle: false,
       headers: {
         "Content-Type": "multipart/form-data"
       }

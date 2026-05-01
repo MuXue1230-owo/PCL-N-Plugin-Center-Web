@@ -20,8 +20,8 @@
     <!-- 折叠按钮 -->
     <div class="toolbar-toggle" @click="toggleToolbar">
       <el-icon>
-        <ArrowLeft v-if="isCollapsed" />
-        <ArrowRight v-else />
+        <ArrowRight v-if="isCollapsed" />
+        <ArrowLeft v-else />
       </el-icon>
     </div>
   </div>
