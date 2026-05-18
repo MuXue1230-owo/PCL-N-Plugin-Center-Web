@@ -204,6 +204,7 @@ const handleHttpUpload = async (options: UploadRequestOptions) => {
  * */
 const emit = defineEmits<{
   "update:fileList": [value: UploadUserFile[]];
+  fileSuccess: [response: string | undefined, uploadFile: UploadFile];
 }>();
 
 const uploadSuccessCount = ref(0);
@@ -233,6 +234,7 @@ const uploadSuccess = (response: string | undefined, uploadFile: UploadFile) => 
   formItemContext?.prop && formContext?.validateField([formItemContext.prop as string]);
   uploadSuccessCount.value += 1;
   scheduleUploadSuccessNotice();
+  emit("fileSuccess", response, uploadFile);
 };
 
 /**

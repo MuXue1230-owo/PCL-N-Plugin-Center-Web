@@ -66,7 +66,7 @@ import { ref, computed, inject } from "vue";
 import { generateUUID } from "@/utils";
 import koi from "@/utils/axios.ts";
 import { ElNotification, formContextKey, formItemContextKey } from "element-plus";
-import type { UploadProps, UploadRequestOptions } from "element-plus";
+import type { UploadProps, UploadRequestOptions, UploadRawFile } from "element-plus";
 
 interface IUploadImageProps {
   imageUrl: string; // 图片地址 ==> 必传
@@ -129,6 +129,9 @@ const imageDisabled = computed(() => {
  * */
 const emit = defineEmits<{
   "update:imageUrl": [value: string];
+  /** 上传成功（与 KoiUploadFiles / KoiUploadImages 的 fileSuccess 对齐，便于父组件统一处理） */
+  fileSuccess: [url: string, file: UploadRawFile];
+  /** @deprecated 请优先使用 fileSuccess，语义相同 */
   success: [value: string];
 }>();
 const handleHttpUpload = async (options: UploadRequestOptions) => {
@@ -164,6 +167,7 @@ const handleHttpUpload = async (options: UploadRequestOptions) => {
     uploadPercent.value = 100;
     const fileUrl = import.meta.env.VITE_SERVER + res.data?.fileUploadPath;
     emit("update:imageUrl", fileUrl);
+    emit("fileSuccess", fileUrl, options.file);
     emit("success", fileUrl);
     // 仅通过 return 让 el-upload 对 httpRequest 返回的 Promise 执行一次 onSuccess，切勿再手动 options.onSuccess，否则会提示两次
     formItemContext?.prop && formContext?.validateField([formItemContext.prop as string]);
