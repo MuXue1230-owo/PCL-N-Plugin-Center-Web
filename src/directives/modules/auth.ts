@@ -2,20 +2,23 @@
  * v-auth
  * 按钮权限指令
  */
-import useAuthStore from "@/stores/modules/auth.ts";
 import type { Directive, DirectiveBinding } from "vue";
+import { hasAnyPerm } from "@/utils/permission.ts";
+
+function toggle(el: HTMLElement, binding: DirectiveBinding) {
+  const { value } = binding;
+  if (!Array.isArray(value) || value.length === 0) {
+    console.warn(`v-auth 需要非空数组，例如 v-auth="['system:user:add']"`);
+    return;
+  }
+  const allowed = hasAnyPerm(value);
+  // 若需彻底移除 DOM
+  if (!allowed) el.parentNode?.removeChild(el);
+}
 
 const auth: Directive = {
-  mounted(el: HTMLElement, binding: DirectiveBinding) {
-    const { value } = binding;
-    const userStore = useAuthStore();
-    const adminButtons = ["*"];
-    if (Array.isArray(value) && value.some((permission: string) => userStore.buttonList.includes(permission)) || JSON.stringify(userStore.buttonList) === JSON.stringify(adminButtons)) {
-      // 如果用户拥有指定权限中的任何一个或者是管理员，则显示元素
-    } else {
-      el.parentNode?.removeChild(el); // 如果用户不拥有所有权限，则移除元素
-    }
-  }
+  mounted: toggle,
+  updated: toggle  // buttonList 异步加载后会重新计算
 };
 
 export default auth;

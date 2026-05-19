@@ -13,9 +13,11 @@ export const initDynamicRouter = async () => {
 
   try {
     // 1、并行获取菜单列表 && 按钮权限列表 && 递归菜单数据
-    await authStore.listRouters();
-    await authStore.getLoginUserInfo();
-
+    await Promise.all([
+      authStore.listRouters(),
+      authStore.getLoginUserInfo()
+    ]);
+    
     // 2、判断当前用户是否拥有菜单权限
     console.log("authStore.menuList", authStore.menuList);
     // Proxy对象转换为正常的JSON数据
