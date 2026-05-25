@@ -1,6 +1,6 @@
 <template>
   <!-- 全屏 -->
-  <div class="hover:bg-[--el-header-toolbar-icon-hover-bg-color] koi-icon w-36px h-36px rounded-md flex flex-justify-center flex-items-center koi-scale-i" @click="toggle">
+  <div class="hover:bg-[--el-header-icon-hover-bg-color] koi-icon w-36px h-36px rounded-md flex flex-justify-center flex-items-center koi-scale-i" @click="toggle">
     <el-tooltip :content="globalStore.isFullScreen === false ? $t('header.fullScreen') : $t('header.exitFullScreen')">
       <KoiGlobalIcon name="koi-maximize" size="18" v-if="!globalStore.isFullScreen" />
       <KoiGlobalIcon name="koi-close-circle" size="18" v-else />

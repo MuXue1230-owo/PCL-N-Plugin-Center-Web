@@ -21,12 +21,27 @@
     <!-- 头像 AND 下拉折叠 -->
     <User></User>
 
-    <!-- 折叠按钮 -->
-    <div class="toolbar-toggle" @click="toggleToolbar">
-      <el-icon>
-        <ArrowLeft v-if="isCollapsed" />
-        <ArrowRight v-else />
-      </el-icon>
+    <!-- 工具栏折叠 -->
+    <div class="toolbar-toggle-wrap">
+      <span class="toolbar-toggle-divider" aria-hidden="true"></span>
+      <el-tooltip
+        :content="isCollapsed ? t('header.collapseToolbar') : t('header.expandToolbar')"
+        :show-after="1500"
+        placement="bottom"
+      >
+        <button
+          type="button"
+          class="toolbar-toggle"
+          :class="{ 'is-expanded': isCollapsed }"
+          :aria-label="isCollapsed ? t('header.collapseToolbar') : t('header.expandToolbar')"
+          @click="toggleToolbar"
+        >
+          <el-icon :size="14">
+            <DArrowRight v-if="isCollapsed" />
+            <DArrowLeft v-else />
+          </el-icon>
+        </button>
+      </el-tooltip>
     </div>
   </div>
 </template>
@@ -34,8 +49,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { storeToRefs } from "pinia";
-import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
+import { DArrowLeft, DArrowRight } from "@element-plus/icons-vue";
 import useGlobalStore from "@/stores/modules/global.ts";
+import { useI18n } from "vue-i18n";
 import User from "@/layouts/components/Header/components/User.vue";
 import FullScreen from "@/layouts/components/Header/components/FullScreen.vue";
 import Dark from "@/layouts/components/Header/components/Dark.vue";
@@ -47,6 +63,7 @@ import SearchMenu from "@/layouts/components/Header/components/SearchMenu.vue";
 
 const emit = defineEmits(["widthChange"]);
 
+const { t } = useI18n();
 const globalStore = useGlobalStore();
 const { headerInverted, isDark } = storeToRefs(globalStore);
 /** 头部反转色（仅亮色模式）时使用原有实心样式 */
@@ -126,13 +143,7 @@ onUnmounted(() => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
-  html.dark & {
-    background: rgba(30, 30, 30, 0.65);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  }
-
-  /** 头部反转色：恢复原有实心样式，跟随 --el-header-* 主题变量 */
+  /** 头部反转色：实心容器 + 折叠钮与图标 hover 同一套深色变量 */
   &.is-header-inverted {
     background-color: var(--el-header-bg-color);
     backdrop-filter: none;
@@ -141,47 +152,109 @@ onUnmounted(() => {
     box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
 
     .toolbar-toggle {
+      color: var(--el-header-text-color);
       background: var(--el-header-toolbar-collapse-bg-color);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      border: none;
+      border-color: var(--el-header-toolbar-border-color);
+      box-shadow: none;
 
       &:hover {
+        color: var(--el-color-primary);
         background: var(--el-header-toolbar-collapse-hover-bg-color);
-        border-color: transparent;
+        border-color: var(--el-header-toolbar-border-color);
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        border-color: var(--el-color-primary);
+        box-shadow: 0 0 0 2px var(--el-header-toolbar-collapse-hover-bg-color);
       }
     }
+  }
+
+  html.dark & {
+    background: rgba(30, 30, 30, 0.65);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+    .toolbar-toggle {
+      color: var(--el-header-text-color);
+      background: var(--el-header-toolbar-collapse-bg-color);
+      border-color: var(--el-header-toolbar-border-color);
+      box-shadow: none;
+
+      &:hover {
+        color: var(--el-color-primary);
+        background: var(--el-header-toolbar-collapse-hover-bg-color);
+        border-color: var(--el-header-toolbar-border-color);
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        border-color: var(--el-color-primary);
+        box-shadow: 0 0 0 2px var(--el-header-toolbar-collapse-hover-bg-color);
+      }
+    }
+  }
+
+  .toolbar-toggle-wrap {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: 2px;
+  }
+
+  .toolbar-toggle-divider {
+    width: 1px;
+    height: 18px;
+    margin-right: 5px;
+    background: var(--el-header-toolbar-border-color);
+    opacity: 0.75;
   }
 
   .toolbar-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    margin-left: 8px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     color: var(--el-color-primary);
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(8px) saturate(160%);
-    -webkit-backdrop-filter: blur(8px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 50%;
-    transition: all 0.3s ease;
+    background: var(--el-header-toolbar-collapse-bg-color);
+    border: 1px solid var(--el-color-primary-light-7);
+    border-radius: 8px;
+    outline: none;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.2s ease;
 
-    html.dark & {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.12);
+    .el-icon {
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &.is-expanded .el-icon {
+      transform: translateX(-1px);
+    }
+
+    &:not(.is-expanded) .el-icon {
+      transform: translateX(1px);
     }
 
     &:hover {
-      background: rgba(var(--el-color-primary-rgb), 0.18);
+      background: var(--el-header-toolbar-collapse-hover-bg-color);
       border-color: var(--el-color-primary-light-5);
-      transform: scale(1.05);
+      box-shadow: 0 2px 10px rgba(var(--el-color-primary-rgb), 0.22);
     }
 
-    .el-icon {
-      transition: transform 0.3s ease;
+    &:active {
+      transform: scale(0.94);
+    }
+
+    &:focus-visible {
+      border-color: var(--el-color-primary);
+      box-shadow: 0 0 0 2px var(--el-color-primary-light-8);
     }
   }
 }

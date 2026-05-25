@@ -327,6 +327,8 @@ export default {
     language: "语言翻译",
     fullScreen: "全屏",
     exitFullScreen: "退出全屏",
+    collapseToolbar: "收起工具栏",
+    expandToolbar: "展开工具栏",    
     settings: "设置",
     personalCenter: "个人中心",
     changePassword: "修改密码",

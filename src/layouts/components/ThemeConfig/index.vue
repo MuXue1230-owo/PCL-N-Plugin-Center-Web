@@ -2,7 +2,12 @@
   <!-- 主题配置 -->
   <KoiDrawer ref="koiDrawerRef" title="主题配置" size="320" :footerHidden="true" :closeOnClickModel="true">
     <template #content>
-      <div class="p-t-8px select-none">
+      <!--
+        theme-config-panel：主题配置独立作用域
+        - 预览块使用 koi-* 类名，不与 html.layout-horizontal / Layout 组件类名冲突
+        - isolation 防止预览 mix-blend-mode 影响抽屉外的主布局
+      -->
+      <div class="theme-config-panel p-t-8px select-none">
         <!-- 主题颜色选择器 -->
         <div class="config-section">
           <div class="section-header">
@@ -34,32 +39,43 @@
             <span class="section-title">布局样式</span>
           </div>
 
-          <div class="layout-grid">
+          <div class="koi-layout-grid">
             <div
               v-for="layoutOption in layoutOptions"
               :key="layoutOption.value"
-              :class="['layout-item', layoutOption.class, { 'is-active': layout === layoutOption.value }]"
+              :class="['koi-layout-item', layoutOption.previewClass, { 'is-active': layout === layoutOption.value }]"
               @click="setLayout(layoutOption.value)"
             >
-              <div class="layout-preview">
-                <div class="layout-dark"></div>
-                <div class="layout-container" v-if="layoutOption.hasContainer">
-                  <div class="layout-light"></div>
-                  <div class="layout-content"></div>
+              <div class="koi-layout-preview">
+                <div class="koi-block-aside"></div>
+                <div class="koi-layout-inner" v-if="layoutOption.hasContainer">
+                  <div class="koi-block-header"></div>
+                  <div class="koi-block-main"></div>
                 </div>
-                <div class="layout-light" v-if="!layoutOption.hasContainer && layoutOption.hasLight"></div>
+                <div class="koi-block-header" v-if="!layoutOption.hasContainer && layoutOption.hasLight"></div>
                 <div
-                  class="layout-content"
-                  v-if="!layoutOption.hasContainer && !layoutOption.hasLight && layoutOption.value !== 'columns'"
+                  class="koi-block-main"
+                  v-if="
+                    !layoutOption.hasContainer &&
+                    !layoutOption.hasLight &&
+                    layoutOption.value !== 'columns' &&
+                    layoutOption.value !== 'gradation-columns' &&
+                    layoutOption.value !== 'frosted-columns'
+                  "
                 ></div>
-                <!-- 分栏布局特殊处理 -->
-                <template v-if="layoutOption.value === 'columns'">
-                  <div class="layout-light"></div>
-                  <div class="layout-content"></div>
+                <template
+                  v-if="
+                    layoutOption.value === 'columns' ||
+                    layoutOption.value === 'gradation-columns' ||
+                    layoutOption.value === 'frosted-columns'
+                  "
+                >
+                  <div class="koi-block-header"></div>
+                  <div class="koi-block-main"></div>
                 </template>
               </div>
-              <div class="layout-label">{{ layoutOption.label }}</div>
-              <div class="layout-check" v-if="layout === layoutOption.value">
+              <div class="koi-layout-label">{{ layoutOption.label }}</div>
+              <div class="koi-layout-check" v-if="layout === layoutOption.value">
                 <el-icon><Check /></el-icon>
               </div>
             </div>
@@ -140,7 +156,6 @@
                 :inactive-value="false"
                 :inline-prompt="true"
                 v-model="asideInverted"
-                @change="setAsideTheme"
               />
             </div>
 
@@ -153,7 +168,6 @@
                 :inactive-value="false"
                 :inline-prompt="true"
                 v-model="headerInverted"
-                @change="setHeaderTheme"
               />
             </div>
 
@@ -203,6 +217,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, onMounted, watch, computed } from "vue";
+import { DEFAULT_THEME } from "@/config/index.ts";
 import { useTheme } from "@/utils/theme.ts";
 import { storeToRefs } from "pinia";
 import mittBus from "@/utils/mittBus.ts";
@@ -213,9 +228,19 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 const globalStore = useGlobalStore();
 
-const { changeThemeColor, changeGreyOrWeak, setAsideTheme, setHeaderTheme } = useTheme();
-const { layout, isCollapse, transition, tabsStyle, uniqueOpened, menuWidth, isGrey, isWeak, asideInverted, headerInverted } =
-  storeToRefs(globalStore);
+const { changeThemeColor, changeGreyOrWeak } = useTheme();
+const {
+  layout,
+  isCollapse,
+  transition,
+  tabsStyle,
+  uniqueOpened,
+  menuWidth,
+  isGrey,
+  isWeak,
+  asideInverted,
+  headerInverted,
+} = storeToRefs(globalStore);
 
 // 组件尺寸相关
 const dimension = computed(() => globalStore.dimension);
@@ -250,7 +275,7 @@ const handleDimension = (item: string) => {
 
 // 主题颜色配置
 const themeColors = [
-  "#2992FF",
+  DEFAULT_THEME,
   "#1E71EE",
   "#6169FF",
   "#8076C3",
@@ -264,13 +289,13 @@ const themeColors = [
   "#06B6D4"
 ];
 
-// 布局选项配置
+/** 布局预览类名 koi-* 前缀，避免与 html class / 真实 Layout 组件冲突 */
 const layoutOptions = [
-  { value: "vertical", label: "纵向", class: "layout-vertical", hasContainer: true, hasLight: false },
-  { value: "columns", label: "分栏", class: "layout-columns", hasContainer: false, hasLight: false },
-  { value: "classic", label: "经典", class: "layout-classic", hasContainer: true, hasLight: false },
-  { value: "optimum", label: "混合", class: "layout-optimum", hasContainer: true, hasLight: false },
-  { value: "horizontal", label: "横向", class: "layout-horizontal", hasContainer: false, hasLight: false }
+  { value: "vertical", label: "纵向", previewClass: "koi-layout-vertical", hasContainer: true, hasLight: false },
+  { value: "columns", label: "分栏", previewClass: "koi-layout-columns", hasContainer: false, hasLight: false },
+  { value: "classic", label: "经典", previewClass: "koi-layout-classic", hasContainer: true, hasLight: false },
+  { value: "optimum", label: "混合", previewClass: "koi-layout-optimum", hasContainer: true, hasLight: false },
+  { value: "horizontal", label: "横向", previewClass: "koi-layout-horizontal", hasContainer: false, hasLight: false },
 ];
 
 const koiDrawerRef = ref();
@@ -288,16 +313,15 @@ const handleThemeConfig = () => {
       console.warn('无法打开主题配置抽屉，组件可能未正确加载');
     }
   };
-  
+
   nextTick(() => {
     tryOpenDrawer();
   });
 };
 
-/** 布局切换 */
-const setLayout = (value: any) => {
+/** 布局切换（class 同步由 useTheme watch 自动完成，此处只改 store） */
+const setLayout = (value: string) => {
   globalStore.setGlobalState("layout", value);
-  setAsideTheme();
 };
 
 /** 打开主题配置对话框，on 接收事件 */
@@ -307,6 +331,11 @@ mittBus.on("handleThemeConfig", () => {
 </script>
 
 <style lang="scss" scoped>
+/** 主题配置面板：独立作用域，预览类名 koi-* 与真实 Layout 隔离 */
+.theme-config-panel {
+  isolation: isolate;
+}
+
 .config-section {
   margin-bottom: 20px;
 }
@@ -480,13 +509,61 @@ mittBus.on("handleThemeConfig", () => {
   }
 }
 
-/** 布局配置 */
-.layout-grid {
+/** 毛玻璃布局背景缩略图：3 列 × 2 行 */
+.frost-wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.frost-wallpaper-item {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  /** 兜底色在行内 frostWallpaperThumbStyle 中与主题联动；此处仅作 CSS 降级 */
+  background-color: color-mix(in srgb, var(--el-color-primary) 14%, var(--el-fill-color-light));
+  background-size: cover;
+  background-position: center;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 10%);
+  }
+
+  &.is-active {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 2px 12px rgba(var(--el-color-primary-rgb), 0.35);
+  }
+}
+
+.frost-wallpaper-check {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: #fff;
+  background: var(--el-color-primary);
+  border-radius: 50%;
+}
+
+/** 布局配置预览（koi-* 与真实 Layout / html class 隔离） */
+.koi-layout-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 
-  .layout-item {
+  .koi-layout-item {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -510,7 +587,8 @@ mittBus.on("handleThemeConfig", () => {
       box-shadow: 0 4px 20px rgba(var(--el-color-primary-rgb), 0.3);
     }
 
-    .layout-preview {
+    .koi-layout-preview {
+      isolation: isolate;
       width: 80px;
       height: 60px;
       margin-bottom: 8px;
@@ -519,33 +597,33 @@ mittBus.on("handleThemeConfig", () => {
       background: var(--el-fill-color-lighter);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 
-      .layout-dark {
+      .koi-block-aside {
         background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
-      .layout-light {
+      .koi-block-header {
         background: linear-gradient(135deg, var(--el-color-primary-light-5), var(--el-color-primary-light-7));
         border-radius: 4px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
 
-      .layout-content {
+      .koi-block-main {
         background: linear-gradient(135deg, var(--el-color-primary-light-8), var(--el-color-primary-light-9));
         border: 1px dashed var(--el-color-primary-light-5);
         border-radius: 4px;
       }
     }
 
-    .layout-label {
+    .koi-layout-label {
       font-size: 14px;
       font-weight: 500;
       color: var(--el-text-color-primary);
       text-align: center;
     }
 
-    .layout-check {
+    .koi-layout-check {
       position: absolute;
       top: 6px;
       right: 6px;
@@ -562,106 +640,267 @@ mittBus.on("handleThemeConfig", () => {
     }
   }
 
-  // 布局样式
-  .layout-vertical .layout-preview {
+  .koi-layout-vertical .koi-layout-preview {
     display: flex;
     justify-content: space-between;
 
-    .layout-dark {
+    .koi-block-aside {
       width: 20%;
     }
 
-    .layout-container {
+    .koi-layout-inner {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       width: 73%;
 
-      .layout-light {
+      .koi-block-header {
         height: 20%;
       }
 
-      .layout-content {
+      .koi-block-main {
         height: 69%;
       }
     }
   }
 
-  .layout-columns .layout-preview {
+  .koi-layout-gradation .koi-layout-preview {
     display: flex;
     justify-content: space-between;
 
-    .layout-dark {
+    .koi-block-aside {
+      width: 20%;
+      border-radius: 3px;
+    }
+
+    .koi-layout-inner {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 73%;
+      padding: 2px;
+      border-radius: 6px;
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--el-color-primary) 22%, var(--el-bg-color-page)),
+        color-mix(in srgb, var(--el-bg-color-page) 88%, transparent)
+      );
+
+      .koi-block-header {
+        height: 17%;
+      }
+
+      .koi-block-main {
+        height: 70%;
+        border-radius: 5px;
+      }
+    }
+  }
+
+  .koi-layout-frosted .koi-layout-preview {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+      background: linear-gradient(
+        125deg,
+        transparent 30%,
+        color-mix(in srgb, var(--el-color-primary-light-7) 55%, transparent) 48%,
+        transparent 62%
+      );
+      opacity: 0.45;
+      mix-blend-mode: soft-light;
+    }
+
+    .koi-block-aside {
+      width: 20%;
+      border-radius: 3px;
+      filter: blur(0.3px);
+    }
+
+    .koi-layout-inner {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 73%;
+      padding: 2px;
+      border-radius: 6px;
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--el-color-primary) 18%, var(--el-bg-color-page)),
+        color-mix(in srgb, var(--el-bg-color-page) 82%, transparent)
+      );
+      backdrop-filter: blur(1px);
+
+      .koi-block-header {
+        height: 17%;
+        opacity: 0.85;
+      }
+
+      .koi-block-main {
+        height: 70%;
+        border-radius: 5px;
+        border: 1px dashed color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+      }
+    }
+  }
+
+  .koi-layout-columns .koi-layout-preview {
+    display: flex;
+    justify-content: space-between;
+
+    .koi-block-aside {
       width: 14%;
     }
 
-    .layout-light {
+    .koi-block-header {
       width: 17%;
     }
 
-    .layout-content {
+    .koi-block-main {
       width: 55%;
     }
   }
 
-  .layout-classic .layout-preview {
+  .koi-layout-gradation-columns .koi-layout-preview {
+    display: flex;
+    justify-content: space-between;
+
+    .koi-block-aside {
+      width: 14%;
+      border-radius: 3px;
+    }
+
+    .koi-block-header {
+      width: 17%;
+      border-radius: 3px;
+      opacity: 0.95;
+    }
+
+    .koi-block-main {
+      width: 53%;
+      padding: 2px;
+      border-radius: 6px;
+      box-sizing: border-box;
+      background: linear-gradient(
+        125deg,
+        color-mix(in srgb, var(--el-color-primary) 14%, var(--el-bg-color-page)),
+        color-mix(in srgb, var(--el-bg-color-page) 90%, #fafbfc)
+      );
+    }
+  }
+
+  .koi-layout-frosted-columns .koi-layout-preview {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+      background: linear-gradient(
+        125deg,
+        transparent 30%,
+        color-mix(in srgb, var(--el-color-primary-light-7) 48%, transparent) 50%,
+        transparent 64%
+      );
+      opacity: 0.42;
+      mix-blend-mode: soft-light;
+    }
+
+    .koi-block-aside {
+      width: 14%;
+      border-radius: 3px;
+      filter: blur(0.2px);
+    }
+
+    .koi-block-header {
+      width: 17%;
+      border-radius: 3px;
+      opacity: 0.93;
+    }
+
+    .koi-block-main {
+      width: 53%;
+      padding: 2px;
+      border-radius: 6px;
+      box-sizing: border-box;
+      background: linear-gradient(
+        125deg,
+        color-mix(in srgb, var(--el-color-primary) 17%, var(--el-bg-color-page)),
+        color-mix(in srgb, var(--el-bg-color-page) 86%, transparent)
+      );
+      border: 1px dashed color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+    }
+  }
+
+  .koi-layout-classic .koi-layout-preview {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 
-    .layout-dark {
+    .koi-block-aside {
       height: 22%;
     }
 
-    .layout-container {
+    .koi-layout-inner {
       display: flex;
       justify-content: space-between;
       height: 70%;
 
-      .layout-light {
+      .koi-block-header {
         width: 20%;
       }
 
-      .layout-content {
+      .koi-block-main {
         width: 70%;
       }
     }
   }
 
-  .layout-optimum .layout-preview {
+  .koi-layout-optimum .koi-layout-preview {
     display: flex;
     justify-content: space-between;
 
-    .layout-dark {
+    .koi-block-aside {
       width: 20%;
     }
 
-    .layout-container {
+    .koi-layout-inner {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       width: 73%;
 
-      .layout-light {
+      .koi-block-header {
         height: 16%;
       }
 
-      .layout-content {
+      .koi-block-main {
         height: 72%;
       }
     }
   }
 
-  .layout-horizontal .layout-preview {
+  .koi-layout-horizontal .koi-layout-preview {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 
-    .layout-dark {
+    .koi-block-aside {
       height: 20%;
     }
 
-    .layout-content {
+    .koi-block-main {
       height: 67%;
     }
   }
@@ -806,12 +1045,12 @@ mittBus.on("handleThemeConfig", () => {
 //     gap: 16px;
 //   }
 
-//   .interface-config .config-item {
+//   .interface-utils .utils-item {
 //     flex-direction: column;
 //     align-items: flex-start;
 //     gap: 12px;
 
-//     .config-input {
+//     .utils-input {
 //       width: 100%;
 //     }
 //   }

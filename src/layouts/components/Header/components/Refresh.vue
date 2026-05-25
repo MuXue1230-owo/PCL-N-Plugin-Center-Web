@@ -1,7 +1,7 @@
 <template>
   <!-- 刷新 -->
   <div
-    class="hover:bg-[--el-header-toolbar-icon-hover-bg-color] koi-icon w-36px h-36px rounded-md flex flex-justify-center flex-items-center koi-rotate-i"
+    class="hover:bg-[--el-header-icon-hover-bg-color] koi-icon w-36px h-36px rounded-md flex flex-justify-center flex-items-center koi-rotate-i"
     @click="handleRefresh"
   >
     <el-tooltip :content="$t('header.refreshCache')">

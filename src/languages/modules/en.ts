@@ -328,6 +328,8 @@ export default {
     language: "Language translation",
     fullScreen: "Full Screen",
     exitFullScreen: "Exit Full Screen",
+    collapseToolbar: "Collapse toolbar",
+    expandToolbar: "Expand toolbar",    
     personalCenter: "Personal Center",
     settings: "Settings",
     logout: "Log out",
