@@ -55,15 +55,15 @@ export function uuid(): string {
  * 时间段问候语
  */
 export const getDayText = () => {
-  // 获取当前时间
-  let timeNow = new Date();
-  // 获取当前小时
-  let hours = timeNow.getHours();
-  if (hours >= 6 && hours <= 10) return `早上好⛅，今天依旧是开心的一天！`;
-  if (hours >= 10 && hours <= 14) return `中午好，此刻吃饭、睡觉、打豆豆。`;
-  if (hours >= 14 && hours <= 18) return `下午好🌞，尽情享受今天的美好时光。`;
-  if (hours >= 18 && hours <= 24) return `晚上好🌇，注意早点休息哟！`;
-  if (hours >= 0 && hours <= 6) return `凌晨好🌃，注意不要熬夜哟！`;
+  const now = new Date();
+  const hours = now.getHours();
+
+  if (hours >= 6 && hours < 10) return `早上好，新的一天开始了，愿您充满活力！`;
+  if (hours >= 10 && hours < 14) return `中午好，记得好好吃饭，小憩一下～`;
+  if (hours >= 14 && hours < 18) return `下午好，继续加油，今天依然美好！`;
+  if (hours >= 18 && hours < 24) return `晚上好，放下疲惫，早点休息哟。`;
+  // 0-5点
+  return `凌晨好，夜已深，注意身体，早点睡吧。`;
 };
 
 /** ElementPlus 前端假数据分页，:data="tableList.slice((searchParams.pageNo - 1) * searchParams.pageSize, searchParams.pageNo * searchParams.pageSize)" */
