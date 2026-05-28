@@ -174,11 +174,17 @@ const {
   border: none;
   border-radius: 6px;
   outline: none;
-  transition: background-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
     background-color: var(--el-fill-color);
   }
+}
+
+.layout-tabs-bar__item.is-active .layout-tabs-bar__close {
+  color: inherit;
 }
 
 .layout-tabs-bar__item.is-active .layout-tabs-bar__close:hover {
