@@ -22,7 +22,7 @@
  *
  * 菜单反转规则（与改造前 setMenuTheme 一致，现由 CSS 选择器表达）：
  *   侧边栏反转：html.aside-inverted:not(.dark)
- *   横向+头部反转：html.layout-horizontal.header-inverted:not(.dark)
+ *   横向+头部/侧栏反转：html.layout-horizontal + header-inverted（侧栏反转时 theme 同步加 header-inverted）
  */
 import { ElMessage } from "element-plus";
 import { storeToRefs } from "pinia";
@@ -53,7 +53,9 @@ export const useTheme = () => {
     const html = document.documentElement;
     html.classList.toggle("dark", isDark.value);
     html.style.colorScheme = isDark.value ? "dark" : "light";
-    html.classList.toggle("header-inverted", headerInverted.value && !isDark.value);
+    const effectiveHeaderInverted =
+      headerInverted.value || (layout.value === "horizontal" && asideInverted.value);
+    html.classList.toggle("header-inverted", effectiveHeaderInverted && !isDark.value);
     html.classList.toggle("aside-inverted", asideInverted.value && !isDark.value);
     html.classList.toggle("layout-horizontal", layout.value === "horizontal");
     applyPrimaryColorVars(html, themeColor.value || DEFAULT_THEME, isDark.value);

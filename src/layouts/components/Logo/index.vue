@@ -1,8 +1,12 @@
 <template>
-  <div class="koi-logo flex flex-items-center p-l-5px" v-show="showLogo">
+  <div
+    class="koi-logo flex flex-items-center"
+    :class="[rootClass, isHeaderLayout ? 'p-l-5px' : 'p-x-5px']"
+    v-show="showLogo"
+  >
     <!-- Logo 图片 -->
-    <div 
-      class="rounded-full" 
+    <div
+      class="koi-logo__avatar rounded-full flex-shrink-0"
       :class="logoContainerClass"
       :style="logoContainerStyle"
     >
@@ -25,12 +29,12 @@
       :show-after="1500" 
       placement="right"
     >
-      <div 
-        class="truncate select-none" 
+      <div
+        class="koi-logo__title truncate select-none"
         :class="titleClass"
-        :style="titleStyle" 
-        v-text="$t('project.title')" 
-        v-show="!props.isCollapse"
+        :style="titleStyle"
+        v-text="$t('project.title')"
+        v-show="showTitleBlock"
       ></div>
     </el-tooltip>
   </div>
@@ -38,8 +42,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useBreakpoints } from "@vueuse/core";
+import { breakpointsEnum } from "@/hooks/screen/index.ts";
 import settings from "@/settings";
 import logoUrl from "@/assets/images/logo/logo.webp";
+
+const breakpoints = useBreakpoints(breakpointsEnum);
 
 // 接收父组件传递的参数
 const props = defineProps({
@@ -58,11 +66,27 @@ const showLogo = ref(settings.logoShow);
 const logoSize = ref(settings.logoSize);
 const titleAnimate = ref(settings.logoTitleAnimate);
 
+const isHeaderLayout = computed(() => props.layout === "horizontal" || props.layout === "classic");
+
+/** 顶栏布局：大屏显示标题，侧栏折叠时隐藏 */
+const showTitleBlock = computed(() => {
+  if (props.isCollapse) return false;
+  if (isHeaderLayout.value) return breakpoints.greater("lg").value;
+  return true;
+});
+
+const rootClass = computed(() => (isHeaderLayout.value ? "koi-logo--header" : ""));
+
 // Logo 容器样式计算属性
-const logoContainerStyle = computed(() => ({
-  width: logoSize.value,
-  height: logoSize.value
-}));
+const logoContainerStyle = computed(() => {
+  const size = logoSize.value;
+  return {
+    width: size,
+    height: size,
+    maxWidth: size,
+    maxHeight: size
+  };
+});
 
 // Logo 容器类名计算属性
 const logoContainerClass = computed(() => {
@@ -81,10 +105,9 @@ const logoContainerClass = computed(() => {
 const titleClass = computed(() => {
   const baseClass = `truncate select-none ${titleAnimate.value}`;
   switch (props.layout) {
-    case 'horizontal':
-      return `${baseClass} w-155px m-x-10px`;
-    case 'classic':
-      return `${baseClass} w-155px m-x-10px`;
+    case "horizontal":
+    case "classic":
+      return `${baseClass} m-x-10px min-w-0 shrink`;
     default:
       return `${baseClass} flex-1 m-l-10px`;
   }
@@ -112,5 +135,31 @@ const titleStyle = computed(() => {
 .koi-logo {
   height: $aside-header-height;
   line-height: $aside-header-height;
+}
+
+.koi-logo--header {
+  min-width: 0;
+  max-width: min(220px, 32vw);
+  flex-shrink: 1;
+  overflow: hidden;
+}
+
+.koi-logo__avatar {
+  min-width: 0;
+}
+
+.koi-logo__title {
+  min-width: 0;
+}
+
+.koi-logo--header .koi-logo__title {
+  max-width: 155px;
+  flex: 1 1 auto;
+}
+
+@media (max-width: 1199px) {
+  .koi-logo--header .koi-logo__title {
+    display: none !important;
+  }
 }
 </style>

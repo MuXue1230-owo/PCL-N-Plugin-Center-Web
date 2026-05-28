@@ -65,9 +65,13 @@ const emit = defineEmits(["widthChange"]);
 
 const { t } = useI18n();
 const globalStore = useGlobalStore();
-const { headerInverted, isDark } = storeToRefs(globalStore);
-/** 头部反转色（仅亮色模式）时使用原有实心样式 */
-const isHeaderInverted = computed(() => headerInverted.value && !isDark.value);
+const { headerInverted, asideInverted, layout, isDark } = storeToRefs(globalStore);
+/** 头部反转色（仅亮色模式）；横向布局下侧栏反转等同顶栏反转 */
+const isHeaderInverted = computed(() => {
+  if (isDark.value) return false;
+  if (headerInverted.value) return true;
+  return layout.value === "horizontal" && asideInverted.value;
+});
 
 const isCollapsed = ref(true);
 const isSmallScreen = ref(true);

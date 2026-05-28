@@ -77,13 +77,14 @@
           html.classList.add("dark");
           html.style.colorScheme = "dark";
         }
-        if (data && data.headerInverted === true && !isDark) {
+        var isHorizontal = data && data.layout === "horizontal";
+        if (data && !isDark && (data.headerInverted === true || (isHorizontal && data.asideInverted === true))) {
           html.classList.add("header-inverted");
         }
         if (data && data.asideInverted === true && !isDark) {
           html.classList.add("aside-inverted");
         }
-        if (data && data.layout === "horizontal") {
+        if (isHorizontal) {
           html.classList.add("layout-horizontal");
         }
         if (data && data.isGrey === true) {
