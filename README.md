@@ -87,7 +87,7 @@
 
 ### 业务组件
 
-- 二次封装 **Dialog / Drawer / Upload / Excel / Search 等高频组件
+- 二次封装 **Dialog / Drawer / Upload / Excel / Search** 等高频组件
 - **SSE 实时通知**：消息推送、未读角标、贴边收缩面板
 - **锁屏、全屏、多 Tab、面包屑、菜单搜索** 等管理端标配能力
 - 集成 **ECharts 6**、**MD Editor**、**Driver.js** 引导、**Sortable** 拖拽

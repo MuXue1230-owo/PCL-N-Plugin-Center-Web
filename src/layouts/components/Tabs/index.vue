@@ -73,7 +73,7 @@ const tabsRootClass = computed(() => {
 
 const tabsScrollGap = computed(() => {
   if (tabsStyle.value === "google") return 4;
-  if (tabsStyle.value === "plain") return 10;
+  if (tabsStyle.value === "plain") return 6;
   return 6;
 });
 
@@ -164,23 +164,13 @@ const {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-left: 4px;
+  margin-left: 8px;
   padding: 0;
   color: var(--el-text-color-secondary);
   cursor: pointer;
   background: transparent;
   border: none;
-  border-radius: 6px;
   outline: none;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-
-  &:hover {
-    background-color: var(--el-fill-color);
-  }
 }
 
 .layout-tabs-bar__item.is-active .layout-tabs-bar__close {
@@ -196,7 +186,8 @@ const {
   margin: 0 1px;
   padding: 0 10px 0 12px;
   border: 1px solid var(--el-border-color);
-  border-radius: 8px;
+  background: var(--el-bg-color);
+  border-radius: 6px;
 
   &:hover:not(.is-active) {
     background-color: var(--el-fill-color-light);
@@ -220,7 +211,7 @@ const {
   margin-left: 4px;
   margin-top: 6px;
   padding: 0 12px 0 14px;
-  border-radius: 6px;
+  border-radius: 8px;
 
   &:first-of-type {
     margin-left: 8px;
@@ -234,7 +225,7 @@ const {
     width: 1px;
     height: 16px;
     margin: auto;
-    background: var(--el-border-color-light);
+    background: var(--el-border-color);
     transition: opacity 0.3s ease;
     opacity: 1;
   }
@@ -287,18 +278,25 @@ const {
   }
 }
 
-/** 简约：仅字重与颜色区分 */
+/** 简约：圆角描边卡片，选中后图标/文字/叉号均为主题色 */
 .layout-tabs--plain .layout-tabs-bar__item {
+  margin: 0 2px;
   padding: 0 12px;
-  color: var(--el-text-color-secondary);
-
-  &:hover:not(.is-active) {
-    background: var(--el-fill-color-lighter);
-    border-radius: 6px;
-  }
+  color: var(--el-text-color-regular);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
 
   &.is-active {
-    color: var(--el-text-color-primary);
+    color: var(--el-color-primary);
+  }
+
+  .layout-tabs-bar__close {
+    color: inherit;
+  }
+
+  :deep(.el-icon) {
+    color: inherit;
   }
 }
 

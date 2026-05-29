@@ -1,6 +1,15 @@
 <template>
   <!-- 主题配置 -->
-  <KoiDrawer ref="koiDrawerRef" title="主题配置" size="320" :footerHidden="true" :closeOnClickModel="true">
+  <KoiDrawer
+    ref="koiDrawerRef"
+    title="主题配置"
+    size="320"
+    :footerHidden="true"
+    :closeOnClickModel="true"
+    :lock-scroll="false"
+    drawer-class="theme-config-drawer"
+    modal-class="theme-config-overlay"
+  >
     <template #content>
       <!--
         theme-config-panel：主题配置独立作用域
@@ -111,7 +120,7 @@
 
             <div class="config-item">
               <div class="config-label">标签页风格</div>
-              <el-select placeholder="请选择标签页风格" v-model="tabsStyle" clearable class="config-input">
+              <el-select placeholder="请选择标签页风格" v-model="tabsStyle" class="config-input">
                 <el-option label="标签风格" value="card" />
                 <el-option label="谷歌风格" value="google" />
                 <el-option label="简约风格" value="plain" />
@@ -217,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { DEFAULT_THEME } from "@/config/index.ts";
 import { useTheme } from "@/utils/theme.ts";
 import { storeToRefs } from "pinia";
@@ -225,7 +234,6 @@ import mittBus from "@/utils/mittBus.ts";
 import useGlobalStore from "@/stores/modules/global.ts";
 import { koiMsgSuccess } from "@/utils/koi.ts";
 import { useI18n } from "vue-i18n";
-
 const { t } = useI18n();
 const globalStore = useGlobalStore();
 
@@ -240,7 +248,7 @@ const {
   isGrey,
   isWeak,
   asideInverted,
-  headerInverted,
+  headerInverted
 } = storeToRefs(globalStore);
 
 // 组件尺寸相关
@@ -249,6 +257,11 @@ const dimensionList = ref<any>([]);
 
 onMounted(() => {
   handleSwitchLanguage();
+  mittBus.on(THEME_CONFIG_EVENT, handleThemeConfig);
+});
+
+onUnmounted(() => {
+  mittBus.off(THEME_CONFIG_EVENT, handleThemeConfig);
 });
 
 /** 切换语言 */
@@ -296,28 +309,15 @@ const layoutOptions = [
   { value: "columns", label: "分栏", previewClass: "koi-layout-columns", hasContainer: false, hasLight: false },
   { value: "classic", label: "经典", previewClass: "koi-layout-classic", hasContainer: true, hasLight: false },
   { value: "optimum", label: "混合", previewClass: "koi-layout-optimum", hasContainer: true, hasLight: false },
-  { value: "horizontal", label: "横向", previewClass: "koi-layout-horizontal", hasContainer: false, hasLight: false },
+  { value: "horizontal", label: "横向", previewClass: "koi-layout-horizontal", hasContainer: false, hasLight: false }
 ];
 
 const koiDrawerRef = ref();
+const THEME_CONFIG_EVENT = "handleThemeConfig";
 
 /** 打开主题配置 */
 const handleThemeConfig = () => {
-  // 使用递归重试机制，确保组件完全加载
-  const tryOpenDrawer = (retryCount = 0) => {
-    if (koiDrawerRef.value?.koiOpen) {
-      koiDrawerRef.value.koiOpen();
-    } else if (retryCount < 3) {
-      // 最多重试3次，每次延迟100ms
-      setTimeout(() => tryOpenDrawer(retryCount + 1), 100);
-    } else {
-      console.warn('无法打开主题配置抽屉，组件可能未正确加载');
-    }
-  };
-
-  nextTick(() => {
-    tryOpenDrawer();
-  });
+  koiDrawerRef.value?.koiOpen();
 };
 
 /** 布局切换（class 同步由 useTheme watch 自动完成，此处只改 store） */
@@ -325,16 +325,24 @@ const setLayout = (value: string) => {
   globalStore.setGlobalState("layout", value);
 };
 
-/** 打开主题配置对话框，on 接收事件 */
-mittBus.on("handleThemeConfig", () => {
-  handleThemeConfig();
-});
 </script>
+
+<style lang="scss">
+/** 主题抽屉：遮罩与面板同速过渡，避免先亮遮罩后出面板造成的闪一下 */
+.el-overlay.theme-config-overlay {
+  transition: opacity 0.2s ease !important;
+}
+
+.el-drawer.theme-config-drawer {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+</style>
 
 <style lang="scss" scoped>
 /** 主题配置面板：独立作用域，预览类名 koi-* 与真实 Layout 隔离 */
 .theme-config-panel {
   isolation: isolate;
+  contain: layout style;
 }
 
 .config-section {

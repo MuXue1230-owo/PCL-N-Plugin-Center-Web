@@ -2,7 +2,7 @@
   <div>
     <!-- append-to-body：避免渐变布局等 overflow:hidden 裁剪；不写死 z-index，便于 ElMessageBox 等同栈后进层叠在上 -->
     <el-drawer
-      class="koi-drawer-shell"
+      :class="['koi-drawer-shell', drawerClass]"
       v-model="visible"
       :title="title"
       :size="mergedDrawerSize"
@@ -13,6 +13,8 @@
       :loading="loading"
       :footerHidden="footerHidden"
       :show-close="!showWindowShell"
+      :lock-scroll="lockScroll"
+      :modal-class="modalClass"
       append-to-body
     >
       <template v-if="showWindowShell" #header="{ titleId, titleClass }">
@@ -20,6 +22,7 @@
           <span :id="titleId" :class="titleClass">{{ title }}</span>
           <KoiShellHeaderActions
             :is-fullscreen="windowFullscreen"
+            :enabled="visible"
             @minimize="minimize"
             @toggle-fullscreen="toggleFullscreen"
             @close="koiClose"
@@ -70,9 +73,16 @@ interface IDrawerProps {
   cancelText?: string;
   direction?: any;
   loading?: boolean;
-  footerHidden?: boolean; // 是否隐藏确认和取消按钮部分
+  /** 是否隐藏底部确认/取消按钮 */
+  footerHidden?: boolean; 
   /** 是否显示右上角窗口壳操作区（收起 / 全屏 / 关闭，样式对齐 KoiToolbar） */
   showWindowShell?: boolean;
+  /** 打开时是否锁定 body 滚动（部分场景会引发主布局宽度抖动） */
+  lockScroll?: boolean;
+  /** 遮罩层自定义 class */
+  modalClass?: string;
+  /** 抽屉面板自定义 class（与 koi-drawer-shell 并存） */
+  drawerClass?: string;
 }
 
 const props = withDefaults(defineProps<IDrawerProps>(), {
@@ -86,7 +96,10 @@ const props = withDefaults(defineProps<IDrawerProps>(), {
   direction: "rtl",
   loading: false,
   footerHidden: false,
-  showWindowShell: true
+  showWindowShell: true,
+  lockScroll: true,
+  modalClass: "",
+  drawerClass: ""
 });
 
 const visible = ref(false);

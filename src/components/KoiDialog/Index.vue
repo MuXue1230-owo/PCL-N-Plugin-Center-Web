@@ -5,6 +5,7 @@
     :model-value="visible"
     :title="title"
     :width="dialogWidth"
+    :top="top"
     :center="center"
     :align-center="alignCenter"
     :close-on-click-modal="closeOnClickModel"
@@ -22,6 +23,7 @@
         <span class="el-dialog__title">{{ title }}</span>
         <KoiShellHeaderActions
           :is-fullscreen="dialogFullscreen"
+          :enabled="visible"
           @minimize="minimize"
           @toggle-fullscreen="toggleFullscreen"
           @close="koiClose"
@@ -65,6 +67,8 @@ interface IDialogProps {
   title?: string;
   visible?: boolean;
   width?: number;
+  /** 距视口顶部的偏移，对应 el-dialog 的 top（如 6vh） */
+  top?: string;
   /** 标题与页脚内容是否居中排版 */
   center?: boolean;
   /** 弹窗是否在视口中水平、垂直居中（对应 el-dialog 的 align-center） */
@@ -82,10 +86,13 @@ interface IDialogProps {
   showWindowShell?: boolean;
 }
 
+defineOptions({ inheritAttrs: false });
+
 const props = withDefaults(defineProps<IDialogProps>(), {
   title: "KoiDialog",
   height: 300,
   width: 650,
+  top: "",
   center: true,
   alignCenter: true,
   visible: false,
