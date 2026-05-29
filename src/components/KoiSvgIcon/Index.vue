@@ -1,5 +1,5 @@
 <template>
-  <svg :style="{ width: `${width}px`, height: `${height}px`, color: color || undefined }">
+  <svg :style="{ width: `${width}px`, height: `${height}px`, color: color || 'inherit' }">
     <use :xlink:href="prefix + name"></use>
   </svg>
 </template>
