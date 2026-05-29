@@ -1,74 +1,85 @@
 <template>
-  <!-- 搜索菜单 -->
-  <div style="position: relative; display: flex; align-items: center">
+  <div class="search-menu-trigger">
     <div
       class="hover:bg-[--el-header-icon-hover-bg-color] koi-icon w-36px h-36px rounded-md flex flex-justify-center flex-items-center koi-pulse-i"
-      @click="handleMenuOpen"
+      @click="isShowSearch = true"
     >
       <el-tooltip :content="$t('header.searchMenu')">
         <KoiGlobalIcon name="koi-search" size="18" />
       </el-tooltip>
     </div>
 
-    <el-dialog class="search-dialog" v-model="isShowSearch" :width="400" :show-close="false" top="8vh" :append-to-body="true">
-      <div style="display: flex; flex-direction: column; height: 500px">
-        <!-- 搜索输入框 -->
-        <div>
+    <el-dialog
+      v-model="isShowSearch"
+      class="search-menu-dialog"
+      width="520"
+      :show-close="false"
+      top="10vh"
+      append-to-body
+      destroy-on-close
+    >
+      <div class="search-menu">
+        <div class="search-menu__search">
           <el-input
-            v-model="searchMenu"
             ref="menuInputRef"
+            v-model="searchMenu"
             :placeholder="$t('header.menuSearch')"
             size="large"
             clearable
-            prefix-icon="Search"
-          ></el-input>
-        </div>
-
-        <!-- 搜索结果列表 -->
-        <div v-if="searchList.length" style="flex: 1; overflow-y: auto; padding: 10px 20px" ref="menuListRef">
-          <div
-            v-for="item in searchList"
-            :key="item.path"
-            :class="['menu-item', { 'menu-active': item.path === activePath }]"
-            :style="getMenuItemStyle(item)"
-            @mouseenter="handleMouseEnter(item)"
-            @mouseleave="handleMouseLeave"
-            @click="handleClickMenuItem(item)"
           >
-            <div style="display: flex; align-items: center; flex: 1; gap: 12px">
-              <KoiGlobalIcon v-if="item.meta.icon" :name="item.meta.icon" size="18" :style="getIconStyle(item)" />
-              <el-icon v-else :style="getIconStyle(item)">
-                <Menu />
-              </el-icon>
-              <span :style="getTitleStyle(item)">
-                {{ item.localizedTitle }}
-              </span>
-            </div>
-          </div>
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
         </div>
 
-        <!-- 空状态 -->
-        <el-empty
-          v-else
-          style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px"
-          :image-size="80"
-          :description="$t('msg.null')"
-        />
+        <div class="search-menu__content">
+          <div v-if="!searchMenu.trim()" class="search-menu__placeholder">
+            <div class="search-menu__placeholder-icon">
+              <KoiGlobalIcon name="koi-search" size="28" />
+            </div>
+            <p class="search-menu__placeholder-title">{{ $t("header.searchMenu") }}</p>
+            <p class="search-menu__placeholder-desc">{{ $t("header.searchMenuHint") }}</p>
+          </div>
 
-        <!-- 快捷键提示 -->
-        <div
-          style="
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            padding: 10px 16px;
-            border-top: 1px solid var(--el-border-color-lighter);
-            background: linear-gradient(135deg, var(--el-fill-color-lighter), var(--el-fill-color-light));
-          "
-        >
-          <el-button size="small" plain>↑↓ 选择</el-button>
-          <el-button size="small" plain>↵ 确认</el-button>
-          <el-button size="small" plain>ESC 关闭</el-button>
+          <el-scrollbar v-else-if="searchList.length" max-height="360">
+            <div ref="menuListRef" class="search-menu__list">
+              <div
+                v-for="item in searchList"
+                :key="item.path"
+                :class="['search-menu__item', { 'is-active': item.path === activePath }]"
+                @mouseenter="activePath = item.path"
+                @click="handleClickMenuItem(item)"
+              >
+                <div class="search-menu__item-icon">
+                  <KoiGlobalIcon v-if="item.meta.icon" :name="item.meta.icon" size="16" />
+                  <el-icon v-else :size="16"><Menu /></el-icon>
+                </div>
+                <div class="search-menu__item-meta">
+                  <span class="search-menu__item-title">{{ item.localizedTitle }}</span>
+                  <span class="search-menu__item-path">{{ item.path }}</span>
+                </div>
+                <span v-if="item.path === activePath" class="search-menu__item-enter">↵</span>
+              </div>
+            </div>
+          </el-scrollbar>
+
+          <el-empty v-else :image-size="72" :description="$t('msg.null')" />
+        </div>
+
+        <div class="search-menu__footer">
+          <span class="search-menu__shortcut">
+            <kbd>↑</kbd><kbd>↓</kbd>
+            {{ $t("header.searchMenuSelect") }}
+          </span>
+          <span class="search-menu__shortcut">
+            <kbd>↵</kbd>
+            {{ $t("header.searchMenuEnter") }}
+          </span>
+          <span class="search-menu__shortcut">
+            <kbd>ESC</kbd>
+            {{ $t("header.searchMenuEsc") }}
+          </span>
         </div>
       </div>
     </el-dialog>
@@ -77,7 +88,8 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from "vue";
-import { InputInstance } from "element-plus";
+import { Menu, Search } from "@element-plus/icons-vue";
+import type { InputInstance } from "element-plus";
 import useAuthStore from "@/stores/modules/auth.ts";
 import { useRouter } from "vue-router";
 import { useDebounceFn } from "@vueuse/core";
@@ -106,10 +118,9 @@ function flattenVisibleLeafMenus(routes: any[] | undefined, bucket: any[] = []):
   return bucket;
 }
 
-const menuList: any = computed(() => flattenVisibleLeafMenus(authStore.recursiveMenuList));
+const menuList = computed(() => flattenVisibleLeafMenus(authStore.recursiveMenuList));
 
-// 转换菜单数据，添加国际化标题（依赖 locale，切换语言后标题与搜索匹配会更新）
-const localizedMenuList: any = computed(() => {
+const localizedMenuList = computed(() => {
   locale.value;
   return menuList.value.map((item: any) => ({
     ...item,
@@ -119,133 +130,27 @@ const localizedMenuList: any = computed(() => {
 });
 
 const activePath = ref("");
-const hoveredItem = ref<string>("");
-
-const handleMouseEnter = (item: any) => {
-  hoveredItem.value = item.path;
-  // 鼠标悬浮时也更新选中状态
-  activePath.value = item.path;
-};
-
-const handleMouseLeave = () => {
-  hoveredItem.value = "";
-};
-
-// 获取菜单项样式
-const getMenuItemStyle = (item: any) => {
-  const isActive = item.path === activePath.value;
-  const isHovered = item.path === hoveredItem.value;
-
-  const baseStyle = {
-    position: "relative" as const,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: "48px",
-    padding: "0 16px",
-    margin: "6px 0",
-    cursor: "pointer",
-    borderRadius: "10px",
-    transition: "all 0.3s ease"
-  };
-
-  if (isActive) {
-    return {
-      ...baseStyle,
-      color: "#FFFFFF",
-      background: "linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3))",
-      border: "1px solid var(--el-color-primary)",
-      transform: "translateY(-1px)",
-      boxShadow: "0 6px 20px rgba(64, 158, 255, 0.3)"
-    } as any;
-  } else if (isHovered) {
-    return {
-      ...baseStyle,
-      color: "var(--el-color-primary)",
-      backgroundColor: "var(--el-color-primary-light-9)",
-      border: "1px solid var(--el-color-primary-light-7)",
-      transform: "translateY(-1px)",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-    };
-  } else {
-    return {
-      ...baseStyle,
-      color: "var(--el-text-color-regular)",
-      backgroundColor: "var(--el-fill-color-light)",
-      border: "1px solid var(--el-border-color-lighter)",
-      transform: "translateY(0)",
-      boxShadow: "none"
-    };
-  }
-};
-
-// 获取图标样式
-const getIconStyle = (item: any) => {
-  const isActive = item.path === activePath.value;
-  const isHovered = item.path === hoveredItem.value;
-
-  return {
-    fontSize: isActive || isHovered ? "18px" : "16px",
-    color: isActive ? "#FFFFFF" : isHovered ? "var(--el-color-primary)" : "var(--el-text-color-secondary)",
-    transition: "all 0.3s ease",
-    flexShrink: 0,
-    transform: isActive || isHovered ? "scale(1.1)" : "scale(1)"
-  };
-};
-
-// 获取标题样式
-const getTitleStyle = (item: any) => {
-  const isActive = item.path === activePath.value;
-  const isHovered = item.path === hoveredItem.value;
-
-  return {
-    fontSize: isActive || isHovered ? "15px" : "14px",
-    fontWeight: isActive || isHovered ? "bold" : "normal",
-    color: isActive ? "#FFFFFF" : isHovered ? "var(--el-color-primary)" : "var(--el-text-color-primary)",
-    transition: "all 0.3s ease",
-    lineHeight: "1.4",
-    flex: 1
-  };
-};
-
 const menuInputRef = ref<InputInstance | null>(null);
-const isShowSearch = ref<boolean>(false);
-const searchMenu = ref<string>("");
-
-watch(isShowSearch, val => {
-  if (val) {
-    document.addEventListener("keydown", keyboardOperation);
-  } else {
-    document.removeEventListener("keydown", keyboardOperation);
-  }
-});
-
-const handleMenuOpen = () => {
-  isShowSearch.value = true;
-  nextTick(() => {
-    setTimeout(() => {
-      menuInputRef.value?.focus();
-    });
-  });
-};
-
-const searchList = ref<any>([]);
+const menuListRef = ref<HTMLElement | null>(null);
+const isShowSearch = ref(false);
+const searchMenu = ref("");
+const searchList = ref<any[]>([]);
 
 const updateSearchList = () => {
-  searchList.value = searchMenu.value
+  const keyword = searchMenu.value.trim();
+  searchList.value = keyword
     ? localizedMenuList.value.filter((item: any) => {
-        const searchText = searchMenu.value.toLowerCase();
+        const searchText = keyword.toLowerCase();
         const titleMatch = item.localizedTitle.toLowerCase().includes(searchText);
         const originalTitleMatch = item.originalTitle.toLowerCase().includes(searchText);
         const pathMatch = item.path.toLowerCase().includes(searchText);
-
         return (titleMatch || originalTitleMatch || pathMatch) && item.meta?.isVisible === "1";
       })
     : [];
-  activePath.value = searchList.value.length ? searchList.value[0].path : "";
+  activePath.value = searchList.value[0]?.path ?? "";
 };
 
-const debouncedUpdateSearchList = useDebounceFn(updateSearchList, 300);
+const debouncedUpdateSearchList = useDebounceFn(updateSearchList, 200);
 
 watch(searchMenu, debouncedUpdateSearchList);
 
@@ -253,18 +158,33 @@ watch(locale, () => {
   if (isShowSearch.value) updateSearchList();
 });
 
-const menuListRef = ref<Element | null>(null);
+watch(isShowSearch, val => {
+  if (val) {
+    document.addEventListener("keydown", keyboardOperation);
+    nextTick(() => {
+      setTimeout(() => menuInputRef.value?.focus(), 50);
+    });
+  } else {
+    document.removeEventListener("keydown", keyboardOperation);
+    searchMenu.value = "";
+    searchList.value = [];
+    activePath.value = "";
+  }
+});
+
+const scrollActiveIntoView = () => {
+  nextTick(() => {
+    menuListRef.value?.querySelector(".search-menu__item.is-active")?.scrollIntoView({ block: "nearest" });
+  });
+};
+
 const keyPressUpOrDown = (direction: number) => {
   const length = searchList.value.length;
   if (length === 0) return;
   const index = searchList.value.findIndex((item: any) => item.path === activePath.value);
   const newIndex = (index + direction + length) % length;
   activePath.value = searchList.value[newIndex].path;
-  nextTick(() => {
-    if (!menuListRef.value?.firstElementChild) return;
-    const menuItemHeight = menuListRef.value.firstElementChild.clientHeight + 12 || 0;
-    menuListRef.value.scrollTop = newIndex * menuItemHeight;
-  });
+  scrollActiveIntoView();
 };
 
 const keyboardOperation = (event: KeyboardEvent) => {
@@ -280,21 +200,17 @@ const keyboardOperation = (event: KeyboardEvent) => {
   } else if (event.key === "Escape") {
     event.preventDefault();
     isShowSearch.value = false;
-    searchMenu.value = "";
   }
 };
 
 const handleClickMenuItem = (item: any) => {
   if (!item) return;
-  // 更新选中状态
   activePath.value = item.path;
-  // 延迟跳转，让用户看到选中效果
   setTimeout(() => {
     if (item.meta?.linkUrl) window.open(item.meta.linkUrl, "_blank");
     else router.push(item.path);
-    searchMenu.value = "";
     isShowSearch.value = false;
-  }, 150);
+  }, 120);
 };
 
 const handleClickMenu = () => {
@@ -303,3 +219,214 @@ const handleClickMenu = () => {
   handleClickMenuItem(menu);
 };
 </script>
+
+<style lang="scss" scoped>
+.search-menu-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-menu {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.search-menu__search {
+  padding: 16px 16px 12px;
+
+  :deep(.el-input__wrapper) {
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px var(--el-border-color-lighter) inset;
+  }
+
+  :deep(.el-input__wrapper.is-focus) {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+  }
+}
+
+.search-menu__content {
+  flex: 1;
+  min-height: 280px;
+  padding: 0 12px;
+}
+
+.search-menu__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.search-menu__placeholder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 14px;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: 14px;
+}
+
+.search-menu__placeholder-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.search-menu__placeholder-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+}
+
+.search-menu__list {
+  padding: 4px 4px 8px;
+}
+
+.search-menu__item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: 52px;
+  padding: 0 10px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover,
+  &.is-active {
+    background-color: var(--el-color-primary-light-9);
+  }
+
+  &.is-active {
+    box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+
+    .search-menu__item-title {
+      color: var(--el-color-primary);
+      font-weight: 500;
+    }
+
+    .search-menu__item-icon {
+      color: var(--el-color-primary);
+      background-color: var(--el-color-primary-light-8);
+    }
+  }
+}
+
+.search-menu__item-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--el-text-color-secondary);
+  background-color: var(--el-fill-color-light);
+  border-radius: 8px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.search-menu__item-meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.search-menu__item-title {
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-menu__item-path {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-menu__item-enter {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.search-menu__footer {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-lighter);
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.search-menu__shortcut {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  white-space: nowrap;
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--el-text-color-regular);
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    box-shadow: 0 1px 0 var(--el-border-color-lighter);
+  }
+}
+</style>
+
+<style lang="scss">
+.search-menu-dialog {
+  .el-dialog {
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 12%);
+  }
+
+  .el-dialog__header {
+    display: none;
+  }
+
+  .el-dialog__body {
+    padding: 0;
+  }
+}
+</style>

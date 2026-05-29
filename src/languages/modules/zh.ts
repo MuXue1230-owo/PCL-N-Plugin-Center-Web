@@ -343,7 +343,11 @@ export default {
       chinese: "简体中文",
       english: "英文"
     },
-    menuSearch: "菜单搜索：支持菜单名称、路径"
+    menuSearch: "菜单搜索：支持菜单名称、路径",
+    searchMenuHint: "输入菜单名称或路径，快速定位页面",
+    searchMenuSelect: "选择",
+    searchMenuEnter: "确认",
+    searchMenuEsc: "关闭"
   },
   msg: {
     success: "操作成功",

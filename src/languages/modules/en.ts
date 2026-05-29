@@ -343,7 +343,11 @@ export default {
       chinese: "Chinese",
       english: "English"
     },
-    menuSearch: "Menu search: Support menu name, path"
+    menuSearch: "Menu search: Support menu name, path",
+    searchMenuHint: "Type a menu name or path to navigate quickly",
+    searchMenuSelect: "Navigate",
+    searchMenuEnter: "Open",
+    searchMenuEsc: "Close"
   },
   msg: {
     success: "Operation successful",
