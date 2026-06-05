@@ -3,14 +3,15 @@
     <KoiCard>
       <div
         class="home-welcome"
-        v-waterMarker="{ text: 'KOI-ADMIN', textColor: '#D9D9D9' }"
       >
+        <!-- :src="
+          authStore.loginUser?.avatar ||
+          'https://pic4.zhimg.com/v2-702a23ebb518199355099df77a3cfe07_b.webp'
+        " -->
         <img
           class="home-welcome__avatar"
-          :src="
-            authStore.loginUser?.avatar ||
-            'https://pic4.zhimg.com/v2-702a23ebb518199355099df77a3cfe07_b.webp'
-          "
+
+           src="https://pic4.zhimg.com/v2-702a23ebb518199355099df77a3cfe07_b.webp"
           alt="avatar"
         />
         <div class="home-welcome__content">

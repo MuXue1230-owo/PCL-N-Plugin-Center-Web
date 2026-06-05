@@ -26,7 +26,7 @@ const authStore = defineStore("auth", {
         userId: "",
         loginName: "",
         sex: "",
-        avatar: ""
+        avatar: "https://pic4.zhimg.com/v2-702a23ebb518199355099df77a3cfe07_b.webp"
       }
     };
   },
