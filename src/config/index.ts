@@ -9,13 +9,13 @@ export const STATIC_URL: string = "/system/static";
 export const LOGIN_URL: string = "/login";
 
 // pinia仓库前缀
-export const CACHE_PREFIX: string = "koi-";
+export const CACHE_PREFIX: string = "pcl-plugin-center-";
 
 // Svg本地图片使用 koi- 开头才会生效
 export const SVG_PREFIX: string = "koi-";
 
 // 默认主题颜色
-export const DEFAULT_THEME: string = "#2992FF";
+export const DEFAULT_THEME: string = "#4F6EF7";
 
 // 路由白名单地址[本地存在的路由 staticRouter.ts 中]
 export const ROUTER_WHITE_LIST: string[] = ["/500"];

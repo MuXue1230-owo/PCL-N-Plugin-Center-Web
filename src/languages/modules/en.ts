@@ -1,11 +1,11 @@
 export default {
   project: {
-    title: "KOI-ADMIN"
+    title: "PCL.N Plugin Center"
   },
   menu: {
     login: {
       auth: "Login",
-      title: "KOI-ADMIN Platform",
+      title: "PCL.N Plugin Center",
       welcome: "Welcome to login",
       platform: "Management platform",
       description: "Maybe we just got lucky",

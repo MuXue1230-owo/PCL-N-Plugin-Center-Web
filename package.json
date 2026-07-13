@@ -1,12 +1,11 @@
 {
-  "name": "koi-ui",
+  "name": "pcl-n-plugin-center-web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "author": {
-    "name": "YuXin",
-    "email": "1736306607@qq.com",
-    "url": "https://gitee.com/KoiKite/koi-ui"
+    "name": "PCL.N contributors",
+    "url": "https://github.com/MuXue1230-owo/PCL-N-Plugin-Center-Web"
   },
   "scripts": {
     "dev": "vite",
@@ -14,12 +13,14 @@
     "build:test": "vue-tsc && vite build --mode test",
     "build:prod": "vue-tsc && vite build --mode production",
     "type:check": "vue-tsc --noEmit --skipLibCheck",
+    "check": "pnpm type:check && pnpm build:prod",
     "preview": "npm run build:dev && vite preview",
     "release": "standard-version",
     "commit": "git add -A && czg && git push"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@supabase/supabase-js": "^2.110.2",
     "@vueuse/core": "^14.3.0",
     "animate.css": "^4.1.1",
     "axios": "^1.17.0",

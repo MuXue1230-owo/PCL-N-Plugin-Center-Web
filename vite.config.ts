@@ -47,7 +47,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       host: "0.0.0.0", // 允许本机IP访问 0.0.0.0
       port: 5730, // 端口号
       hmr: true, // 热更新
-      open: true, // 自动打开
+      open: false, // 保持无界面运行，不打断桌面工作
       proxy: {
         // 代理跨域
         [env.VITE_WEB_BASE_API]: {

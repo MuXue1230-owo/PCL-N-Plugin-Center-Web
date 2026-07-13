@@ -1,11 +1,11 @@
 export default {
   project: {
-    title: "KOI-ADMIN"
+    title: "PCL.N 插件中心"
   },
   menu: {
     login: {
       auth: "登录",
-      title: "KOI-ADMIN 管理平台",
+      title: "PCL.N 插件中心",
       welcome: "欢迎登录",
       platform: "管理平台",
       description: "或许我们只是差点运气",
