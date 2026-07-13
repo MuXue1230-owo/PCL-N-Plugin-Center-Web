@@ -131,6 +131,7 @@ import useUserStore from "@/stores/modules/user.ts";
 import useTabsStore from "@/stores/modules/tabs.ts";
 import useKeepAliveStore from "@/stores/modules/keepAlive.ts";
 import { User } from "@element-plus/icons-vue";
+import logo from "@/assets/images/logo/logo.webp";
 
 const route = useRoute();
 const router = useRouter();
@@ -302,18 +303,16 @@ const toggleFirstColumn = () => {
 };
 
 // 用户姓名
-const userName = ref("于心");
-// 手机号码
-const userPhone = ref("18888888888");
-// 用户头像
-const avatar = ref("https://pic4.zhimg.com/v2-702a23ebb518199355099df77a3cfe07_1440w.webp");
+const userName = computed(() => authStore.loginUser.loginName || "PCL.N 用户");
+const userPhone = computed(() => authStore.loginUser.email || "GitHub OAuth");
+const avatar = computed(() => authStore.loginUser.avatar || logo);
 
 /** 退出登录 */
-const handleLayout = () => {
+const handleLayout = async () => {
   // 清除 sessionStorage
   koiSessionStorage.clear();
   // 清除用户 token
-  userStore.setToken("");
+  await userStore.signOut();
   // 清除 tabs 数据
   tabsStore.$reset();
   // 清除 keepAlive 缓存
@@ -328,10 +327,10 @@ const handleLayout = () => {
 const handleCommand = (command: string | number) => {
   switch (command) {
     case "koiMine":
-      router.push("/system/personage");
+      router.push("/publisher/organization");
       break;
     case "logout":
-      handleLayout();
+      void handleLayout();
       break;
   }
 };

@@ -78,7 +78,7 @@ function handle401Unauthorized(data: any) {
   // 如果当前是登录页面，直接清除token并拒绝请求
   if (currentPath === "/" || currentPath === LOGIN_URL) {
     const userStore = useUserStore();
-    userStore.setToken("");
+    void userStore.signOut();
     return Promise.reject(data);
   }
 
@@ -103,9 +103,9 @@ function handle401Unauthorized(data: any) {
           showClose: false,
           distinguishCancelAndClose: true
         })
-          .then(() => {
+          .then(async () => {
             const userStore = useUserStore();
-            userStore.setToken("");
+            await userStore.signOut();
             koiMsgError(i18n.global.t("msg.confirmLogin"));
             reject(i18n.global.t("button.confirm"));
             setTimeout(() => {

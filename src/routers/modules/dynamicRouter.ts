@@ -50,7 +50,7 @@ const doInitDynamicRouter = async () => {
 
   try {
     if (!authStore.menuList?.length) {
-      await Promise.all([authStore.listRouters(), authStore.getLoginUserInfo()]);
+      await authStore.listRouters();
     }
 
     if (!authStore.menuList?.length) {

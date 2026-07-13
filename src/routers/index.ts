@@ -5,7 +5,6 @@ import { RouteLocationNormalized } from "vue-router";
 import useUserStore from "@/stores/modules/user.ts";
 import useAuthStore from "@/stores/modules/auth.ts";
 import { LOGIN_URL, ROUTER_WHITE_LIST } from "@/config/index.ts";
-import { koiMsgWarning } from "@/utils/koi.ts";
 import { ElMessageBox } from 'element-plus';
 import { useDebounceFn } from '@vueuse/core';
 import { initDynamicRouter, isDynamicRoutesMissing } from "@/routers/modules/dynamicRouter.ts";
@@ -44,18 +43,23 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   const userStore = useUserStore();
   const authStore = useAuthStore();
 
+  try {
+    await userStore.restoreSession();
+  } catch (error) {
+    console.warn("Supabase 会话恢复失败", error);
+    userStore.setToken("");
+  }
+
   // 1、NProgress 开始
   nprogress.start();
   // 2、标题切换，没有放置后置路由，是因为页面路径不存在，title会变成undefined
-  document.title = getMenuLanguage(to.meta?.title as string) || "KOI-ADMIN";
+  document.title = getMenuLanguage(to.meta?.title as string) || "PCL.N 插件中心";
 
   // 3、判断是访问登录页，有Token访问当前页面，token过期访问接口，axios封装则自动跳转登录页面，没有Token重置路由到登陆页。
   if (to.path.toLocaleLowerCase() === LOGIN_URL) {
     // 有Token访问当前页面，重定向到之前访问的页面或首页
     if (userStore.token) {
       return from.fullPath && from.fullPath !== LOGIN_URL ? from.fullPath : "/";
-    } else {
-      koiMsgWarning(i18n.global.t("msg.confirmLogin"));
     }
     // 登录页需要清空路由，否则会显示之前的路由。
     resetRouter();

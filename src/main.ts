@@ -30,6 +30,8 @@ import KoiComponents from "@/components/index.ts";
 import KoiDirectives from "@/directives/index";
 // uncoss防止覆盖ElementPlus 的 el-button的css，所有放置最下方
 import "uno.css";
+import { supabase } from "@/lib/supabase";
+import useUserStore from "@/stores/modules/user";
 
 // 创建app
 const app = createApp(App);
@@ -45,6 +47,10 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(router);
 // 注册pinia
 app.use(pinia);
+const userStore = useUserStore(pinia);
+supabase.auth.onAuthStateChange((_event, session) => {
+  userStore.setToken(session?.access_token ?? "");
+});
 // 注册I18n
 app.use(I18n);
 // 注册自定义组件
