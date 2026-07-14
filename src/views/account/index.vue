@@ -77,7 +77,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("zh-CN", { dateSty
 
 const loadDevices = async () => {
   loadingDevices.value = true;
-  try { devices.value = await pluginCenterApi.listAuthorizedDevices(); }
+  try { devices.value = (await pluginCenterApi.listAuthorizedDevices()).filter(device => !device.revoked_at && new Date(device.expires_at).getTime() > Date.now()); }
   catch (error) { message.value = error instanceof Error ? error.message : "无法读取授权设备"; messageType.value = "error"; }
   finally { loadingDevices.value = false; }
 };
@@ -128,7 +128,7 @@ const revokeDevice = async (device: AuthorizedDevice) => {
     await ElMessageBox.confirm(`撤销“${device.device_name}”后，该设备需要重新登录。`, "撤销设备授权", { type: "warning", confirmButtonText: "确认撤销", cancelButtonText: "取消" });
     revokingDeviceId.value = device.id;
     await pluginCenterApi.revokeAuthorizedDevice(device.id);
-    await loadDevices();
+    devices.value = devices.value.filter(item => item.id !== device.id);
     message.value = "设备授权已撤销";
     messageType.value = "success";
   } catch (error) {
