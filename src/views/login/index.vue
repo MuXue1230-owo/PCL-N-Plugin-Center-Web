@@ -38,10 +38,13 @@
           <el-icon><Lock /></el-icon>
           <span>前端仅使用 Supabase Publishable Key；管理写入由受保护 API 完成。</span>
         </div>
-        <router-link to="/market" class="market-link">浏览插件市场</router-link>
-        <a href="https://github.com/MuXue1230-owo/PCL-N-Plugin-Center-Web" target="_blank" rel="noreferrer">
-          查看开源管理端
-        </a>
+        <div class="login-links">
+          <a href="https://pcln.top/#/market">浏览插件市场</a>
+          <a href="https://docs.pcln.top/" target="_blank" rel="noreferrer">插件开发文档</a>
+          <a href="https://github.com/MuXue1230-owo/PCL-N-Plugin-Center-Web" target="_blank" rel="noreferrer">
+            查看开源管理端
+          </a>
+        </div>
       </div>
     </section>
   </main>
@@ -104,11 +107,11 @@ const signIn = async (provider: "github" | "azure") => {
   const target = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/")
     ? route.query.redirect
     : "/";
-  sessionStorage.setItem("pcln-login-redirect", target);
-  const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
+  const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin);
+  redirectTo.hash = `#${target}`;
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo, scopes: provider === "azure" ? "openid profile email offline_access XboxLive.signin" : undefined }
+    options: { redirectTo: redirectTo.toString(), scopes: provider === "azure" ? "openid profile email offline_access XboxLive.signin" : undefined }
   });
   if (error) {
     errorMessage.value = error.message;
@@ -158,6 +161,7 @@ const signIn = async (provider: "github" | "azure") => {
 .microsoft-icon, .github-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; font-size: 10px; background: rgba(255,255,255,.18); }
 .security-note { display: flex; gap: 8px; align-items: flex-start; margin: 20px 0; padding: 14px; border-radius: 12px; text-align: left; font-size: 12px; line-height: 1.6; color: var(--el-text-color-secondary); background: var(--el-fill-color-light); }
 .login-card a { color: var(--el-color-primary); font-size: 13px; }
+.login-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 18px; }
 
 @media (max-width: 980px) {
   .login-page { grid-template-columns: 1fr; }

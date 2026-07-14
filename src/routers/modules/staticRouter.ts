@@ -34,7 +34,7 @@ export const staticRouter: RouteRecordRaw[] = [
     path: "/",
     name: "layout",
     component: Layout,
-    redirect: HOME_URL,
+    redirect: "/market",
     meta: {
       menuId: "-1",
       title: "PCL.N 插件中心",

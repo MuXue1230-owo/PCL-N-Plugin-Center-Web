@@ -1,6 +1,13 @@
 <template>
   <main class="market-shell">
-    <header><router-link to="/market" class="brand">PCL.N Plugin Market</router-link><router-link :to="userStore.token ? '/home' : '/login'">{{ userStore.token ? '工作台' : '登录' }}</router-link></header>
+    <header>
+      <router-link to="/market" class="brand">PCL.N Plugin Market</router-link>
+      <nav>
+        <a href="https://docs.pcln.top/" target="_blank" rel="noreferrer">开发文档</a>
+        <router-link v-if="userStore.token" to="/home">工作台</router-link>
+        <a v-else :href="authHref">登录</a>
+      </nav>
+    </header>
     <section class="hero"><span>可信插件生态</span><h1>发现适合你的 PCL.N 插件</h1><p>公开浏览经过审核的插件。下载与购买需要登录。</p></section>
     <section class="filters">
       <el-input v-model="search" clearable placeholder="搜索名称或插件 ID" @keyup.enter="load" />
@@ -25,13 +32,14 @@ import { pluginCenterApi, type MarketCategory, type MarketPlugin } from '@/api/p
 import useUserStore from '@/stores/modules/user';
 const userStore=useUserStore(); const search=ref(''); const category=ref(''); const loading=ref(false); const error=ref('');
 const plugins=ref<MarketPlugin[]>([]); const categories=ref<MarketCategory[]>([]);
+const authHref='https://auth.pcln.top/#/login?redirect=%2Fhome';
 const money=(c:number)=>`¥${(c/100).toFixed(2)}`; const categoryName=(id:string)=>categories.value.find(x=>x.id===id)?.name??id;
 const load=async()=>{loading.value=true;error.value='';try{plugins.value=await pluginCenterApi.listMarketPlugins({search:search.value,category:category.value,take:100});}catch(e){error.value=e instanceof Error?e.message:'市场加载失败';}finally{loading.value=false;}};
 onMounted(async()=>{try{categories.value=await pluginCenterApi.listCategories();}finally{await load();}});
 </script>
 <style scoped lang="scss">
 .market-shell{min-height:100vh;padding:0 clamp(20px,6vw,90px) 64px;background:radial-gradient(circle at 85% 0,#dfe5ff 0,transparent 32%),var(--el-bg-color-page)}
-header{height:72px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:800;font-size:18px;color:var(--el-text-color-primary)}
+header{height:72px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:800;font-size:18px;color:var(--el-text-color-primary)}header nav{display:flex;align-items:center;gap:20px}header nav a{color:var(--el-text-color-regular)}header nav a:hover{color:var(--el-color-primary)}
 .hero{padding:72px 0 48px;max-width:760px}.hero span{color:var(--el-color-primary);font-weight:700}.hero h1{font-size:clamp(38px,5vw,64px);letter-spacing:-.04em;margin:14px 0}.hero p{font-size:18px;color:var(--el-text-color-secondary)}
 .filters{display:grid;grid-template-columns:minmax(240px,1fr) 220px auto;gap:12px;padding:18px;background:var(--el-bg-color);border-radius:18px;box-shadow:0 16px 40px rgba(32,45,100,.08)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:28px;min-height:180px}.card{padding:22px;border:1px solid var(--el-border-color-light);border-radius:18px;background:var(--el-bg-color);color:inherit;transition:.2s}.card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(32,45,100,.12)}.card-top,.meta{display:flex;justify-content:space-between;gap:12px}.card h2{margin:20px 0 10px}.card p{min-height:48px;color:var(--el-text-color-secondary);line-height:1.6}.meta{font-size:12px;color:var(--el-text-color-secondary);margin:18px 0}.tag{margin:0 6px 6px 0}

@@ -12,6 +12,23 @@ import { getMenuLanguage, isPathMatch } from "@/utils/index.ts";
 
 // .env配置文件读取
 const mode = import.meta.env.VITE_ROUTER_MODE;
+const PRIMARY_STORE_ORIGIN = "https://pcln.top";
+const AUTH_ORIGIN = "https://auth.pcln.top";
+
+const isAuthHost = () => window.location.hostname.toLowerCase() === "auth.pcln.top";
+const isPrimaryStoreHost = () => ["pcln.top", "www.pcln.top"].includes(window.location.hostname.toLowerCase());
+
+const replaceExternalHashRoute = (origin: string, route: string) => {
+  const target = new URL(import.meta.env.BASE_URL, origin);
+  target.hash = `#${route.startsWith("/") ? route : `/${route}`}`;
+  window.location.replace(target.toString());
+};
+
+const replaceWithAuth = (redirect: string) => {
+  const target = new URL(import.meta.env.BASE_URL, AUTH_ORIGIN);
+  target.hash = `#/login?redirect=${encodeURIComponent(redirect)}`;
+  window.location.replace(target.toString());
+};
 
 // 路由访问两种模式：带#号的哈希模式，正常路径的web模式。
 const routerMode: any = {
@@ -58,11 +75,34 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   if (to.path.toLocaleLowerCase() === LOGIN_URL) {
     // 有Token访问当前页面，重定向到之前访问的页面或首页
     if (userStore.token) {
-      return from.fullPath && from.fullPath !== LOGIN_URL ? from.fullPath : "/";
+      const requestedRedirect = typeof to.query.redirect === "string" && to.query.redirect.startsWith("/")
+        ? to.query.redirect
+        : from.fullPath && from.fullPath !== LOGIN_URL ? from.fullPath : "/market";
+      if (isAuthHost()) {
+        replaceExternalHashRoute(PRIMARY_STORE_ORIGIN, requestedRedirect);
+        return false;
+      }
+      return requestedRedirect;
+    }
+    if (isPrimaryStoreHost()) {
+      const requestedRedirect = typeof to.query.redirect === "string" && to.query.redirect.startsWith("/")
+        ? to.query.redirect
+        : "/market";
+      replaceWithAuth(requestedRedirect);
+      return false;
     }
     // 登录页需要清空路由，否则会显示之前的路由。
     resetRouter();
     return true; // 允许访问登录页
+  }
+
+  // auth.pcln.top 只承载身份认证。OAuth 完成后把目标路由交回主站。
+  if (isAuthHost()) {
+    if (userStore.token) {
+      replaceExternalHashRoute(PRIMARY_STORE_ORIGIN, to.fullPath);
+      return false;
+    }
+    return { path: LOGIN_URL, query: { redirect: to.fullPath }, replace: true };
   }
 
   // 4、判断访问页面是否在路由白名单地址[静态路由]中，如果存在直接放行。
@@ -72,7 +112,11 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
 
   // 5、判断是否有 Token，没有重定向到 login 页面。
   if (!userStore.token) {
-    return { path: LOGIN_URL, replace: true }; // 重定向到登录页
+    if (isPrimaryStoreHost()) {
+      replaceWithAuth(to.fullPath);
+      return false;
+    }
+    return { path: LOGIN_URL, query: { redirect: to.fullPath }, replace: true }; // 重定向到登录页并保留目标
   }
 
   // 6、无菜单数据，或菜单在 store 中但路由未注册（如 resetRouter 后），需重新拉取/注册动态路由
