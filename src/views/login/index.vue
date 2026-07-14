@@ -64,6 +64,9 @@ const route = useRoute();
 const userStore = useUserStore();
 const loadingProvider = ref<"github" | "azure" | "">("");
 const errorMessage = ref("");
+const PRIMARY_STORE_ORIGIN = "https://pcln.top";
+const isAuthHost = () => window.location.hostname.toLowerCase() === "auth.pcln.top";
+const isPrimaryStoreHost = () => ["pcln.top", "www.pcln.top"].includes(window.location.hostname.toLowerCase());
 
 onMounted(async () => {
   const oauthError = String(route.query.error_description ?? route.query.error ?? "");
@@ -93,6 +96,11 @@ onMounted(async () => {
         : storedRedirect?.startsWith("/") ? storedRedirect : HOME_URL;
       sessionStorage.removeItem("pcln-login-redirect");
       await router.replace(redirect);
+      return;
+    }
+    const oauthProvider = route.query.provider;
+    if (oauthProvider === "github" || oauthProvider === "azure") {
+      await signIn(oauthProvider);
     }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "无法恢复登录会话";
@@ -107,7 +115,16 @@ const signIn = async (provider: "github" | "azure") => {
   const target = typeof route.query.redirect === "string" && route.query.redirect.startsWith("/")
     ? route.query.redirect
     : "/";
-  const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin);
+
+  if (isAuthHost()) {
+    const oauthStart = new URL(import.meta.env.BASE_URL, PRIMARY_STORE_ORIGIN);
+    oauthStart.hash = `#/login?provider=${provider}&redirect=${encodeURIComponent(target)}`;
+    window.location.assign(oauthStart.toString());
+    return;
+  }
+
+  const callbackOrigin = isPrimaryStoreHost() ? PRIMARY_STORE_ORIGIN : window.location.origin;
+  const redirectTo = new URL(import.meta.env.BASE_URL, callbackOrigin);
   redirectTo.hash = `#${target}`;
   const { error } = await supabase.auth.signInWithOAuth({
     provider,

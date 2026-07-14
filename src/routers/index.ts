@@ -9,6 +9,7 @@ import { ElMessageBox } from 'element-plus';
 import { useDebounceFn } from '@vueuse/core';
 import { initDynamicRouter, isDynamicRoutesMissing } from "@/routers/modules/dynamicRouter.ts";
 import { getMenuLanguage, isPathMatch } from "@/utils/index.ts";
+import { completeOAuthCallback } from "@/lib/supabase";
 
 // .env配置文件读取
 const mode = import.meta.env.VITE_ROUTER_MODE;
@@ -60,6 +61,7 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   const authStore = useAuthStore();
 
   try {
+    await completeOAuthCallback();
     await userStore.restoreSession();
   } catch (error) {
     console.warn("Supabase 会话恢复失败", error);
@@ -83,6 +85,11 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
         return false;
       }
       return requestedRedirect;
+    }
+    const oauthProvider = to.query.provider;
+    const isOAuthStart = oauthProvider === "github" || oauthProvider === "azure";
+    if (isPrimaryStoreHost() && isOAuthStart) {
+      return true;
     }
     if (isPrimaryStoreHost()) {
       const requestedRedirect = typeof to.query.redirect === "string" && to.query.redirect.startsWith("/")
