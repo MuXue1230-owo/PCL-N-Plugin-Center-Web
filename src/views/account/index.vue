@@ -90,7 +90,12 @@ const load = async () => {
   profile.bio = account.value.profile?.bio ?? "";
   await loadDevices();
   const pending = sessionStorage.getItem("pcln-pending-link-provider");
-  if (route.query.identityLinked === "1" && (pending === "github" || pending === "azure")) {
+  const oauthError = sessionStorage.getItem("pcln-oauth-error");
+  if (route.query.identityLinkError === "1" && oauthError) {
+    sessionStorage.removeItem("pcln-oauth-error");
+    message.value = `Microsoft 绑定失败：${oauthError}`;
+    messageType.value = "error";
+  } else if (route.query.identityLinked === "1" && (pending === "github" || pending === "azure")) {
     sessionStorage.removeItem("pcln-pending-link-provider");
     message.value = `${providerLabel(pending)} 登录方式已绑定。`;
     messageType.value = "success";

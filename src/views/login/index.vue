@@ -69,6 +69,12 @@ const isAuthHost = () => window.location.hostname.toLowerCase() === "auth.pcln.t
 const isPrimaryStoreHost = () => ["pcln.top", "www.pcln.top"].includes(window.location.hostname.toLowerCase());
 
 onMounted(async () => {
+  const storedOAuthError = sessionStorage.getItem("pcln-oauth-error");
+  if (route.query.oauthError === "1" && storedOAuthError) {
+    sessionStorage.removeItem("pcln-oauth-error");
+    errorMessage.value = `Microsoft 登录失败：${storedOAuthError}`;
+    return;
+  }
   const oauthError = String(route.query.error_description ?? route.query.error ?? "");
   if (/email|identity|already|registered|exists/i.test(oauthError)) {
     try {

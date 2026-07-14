@@ -11,6 +11,23 @@ import { initDynamicRouter, isDynamicRoutesMissing } from "@/routers/modules/dyn
 import { getMenuLanguage, isPathMatch } from "@/utils/index.ts";
 import { completeOAuthCallback } from "@/lib/supabase";
 
+const normalizeOAuthErrorRedirect = () => {
+  const currentUrl = new URL(window.location.href);
+  const hashError = currentUrl.hash.match(/^#\/?error=([^&]+)/);
+  const error = currentUrl.searchParams.get("error") ?? (hashError ? decodeURIComponent(hashError[1]) : null);
+  const description = currentUrl.searchParams.get("error_description");
+  if (!error) return;
+
+  sessionStorage.setItem(
+    "pcln-oauth-error",
+    description ? decodeURIComponent(description) : error
+  );
+  const target = sessionStorage.getItem("pcln-pending-link-provider") ? "/account?identityLinkError=1" : "/login?oauthError=1";
+  window.history.replaceState(window.history.state, document.title, `${currentUrl.pathname}#${target}`);
+};
+
+normalizeOAuthErrorRedirect();
+
 // .env配置文件读取
 const mode = import.meta.env.VITE_ROUTER_MODE;
 const PRIMARY_STORE_ORIGIN = "https://pcln.top";
