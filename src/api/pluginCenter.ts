@@ -59,6 +59,15 @@ export interface MarketPlugin {
 export interface MarketCategory { id: string; name: string; description?: string; }
 export interface MarketMetadataInput { categoryId: string; tags: string[]; pricingModel: string; priceCents: number; }
 
+export interface AuthorizedDevice {
+  id: string;
+  device_name: string;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+}
+
 export class PluginCenterApiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -122,6 +131,9 @@ export const pluginCenterApi = {
     grants: Record<string, unknown>[];
     pluginData: Record<string, unknown>[];
   }>("/account"),
+  listAuthorizedDevices: () => request<AuthorizedDevice[]>("/account/devices"),
+  revokeAuthorizedDevice: (deviceId: string) => request<{ revoked: boolean }>(
+    `/account/devices/${encodeURIComponent(deviceId)}`, { method: "DELETE" }),
   approveDesktopPairing: (code: string, provider: "github" | "azure", providerToken?: string) => request<{ approved: boolean }>(
     "/desktop/pairings/approve", { method: "POST", body: jsonBody({ code, provider, providerToken }) }),
   updateProfile: (displayName: string, avatarUrl: string, bio: string) => request<Record<string, unknown>>(

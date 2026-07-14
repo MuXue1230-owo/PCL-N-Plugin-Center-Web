@@ -327,7 +327,7 @@ const handleLayout = async () => {
 const handleCommand = (command: string | number) => {
   switch (command) {
     case "koiMine":
-      router.push("/publisher/organization");
+      router.push("/account");
       break;
     case "logout":
       void handleLayout();

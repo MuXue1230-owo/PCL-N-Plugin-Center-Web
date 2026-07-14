@@ -22,6 +22,12 @@ export const layoutRouter: RouteRecordRaw[] = [
     meta: { title: "PCL N 在线服务账户" }
   },
   {
+    path: "/desktop/authorize",
+    name: "desktopAuthorize",
+    component: () => import("@/views/account/authorize.vue"),
+    meta: { title: "授权 PCL N 桌面端" }
+  },
+  {
     path: LOGIN_URL,
     name: "login",
     component: () => import("@/views/login/index.vue"),
