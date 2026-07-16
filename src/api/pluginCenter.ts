@@ -91,13 +91,43 @@ const request = async <T>(path: string, init: RequestInit = {}, authenticated = 
     headers
   });
   const contentType = response.headers.get("content-type") ?? "";
-  const body = contentType.includes("application/json") ? await response.json() : null;
+  const rawText = await response.text();
+  let body: any = null;
+  if (rawText) {
+    try {
+      body = contentType.includes("application/json") || rawText.trimStart().startsWith("{")
+        ? JSON.parse(rawText)
+        : { detail: rawText };
+    } catch {
+      body = { detail: rawText.slice(0, 500) };
+    }
+  }
   if (!response.ok) {
-    const message = body?.detail ?? body?.title ?? `请求失败（HTTP ${response.status}）`;
+    const code = body?.code ?? body?.error ?? "";
+    let message =
+      body?.detail ??
+      body?.title ??
+      body?.message ??
+      body?.error_description ??
+      (typeof body?.error === "string" ? body.error : null) ??
+      `请求失败（HTTP ${response.status}）`;
+    if (code === "WORKER_RESOURCE_LIMIT" || String(message).includes("WORKER_RESOURCE_LIMIT")) {
+      message =
+        "上传失败：Edge Function 算力/内存不足（WORKER_RESOURCE_LIMIT）。" +
+        "大体积 .pnp（例如多 RID 官方包）请使用直传 Storage 的 upload-session + finalize 流程，" +
+        "或减小包体积后重试。";
+    }
     throw new PluginCenterApiError(message, response.status);
   }
   return body as T;
 };
+
+/** Browser SHA-256 of a File/Blob as lowercase hex (for direct Storage upload sessions). */
+export async function sha256Hex(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 const jsonBody = (value: unknown) => JSON.stringify(value);
 
@@ -158,16 +188,72 @@ export const pluginCenterApi = {
     `/publisher/plugins/${pluginId}`,
     { method: "PUT", body: jsonBody(input) }
   ),
-  uploadVersion: (input: UploadVersionInput) => {
-    const form = new FormData();
-    form.set("version", input.version);
-    form.set("channel", input.channel);
-    form.set("releaseNotes", input.releaseNotes);
-    form.set("minimumLauncherVersion", input.minimumLauncherVersion);
-    form.set("package", input.package);
+  /**
+   * Small packages (&lt; 12 MiB) still use multipart. Larger packages use:
+   * upload-session → direct Storage upload → finalize (stream scan).
+   * Avoids Cloudflare WORKER_RESOURCE_LIMIT on multi-RID .pnp uploads.
+   */
+  uploadVersion: async (input: UploadVersionInput) => {
+    const largeDirectUploadThreshold = 12 * 1024 * 1024;
+    if (input.package.size <= largeDirectUploadThreshold) {
+      const form = new FormData();
+      form.set("version", input.version);
+      form.set("channel", input.channel);
+      form.set("releaseNotes", input.releaseNotes);
+      form.set("minimumLauncherVersion", input.minimumLauncherVersion);
+      form.set("package", input.package);
+      return request<{ version: Record<string, unknown>; scan: Record<string, unknown> }>(
+        `/publisher/plugins/${input.pluginId}/versions`,
+        { method: "POST", body: form }
+      );
+    }
+
+    const packageSha256 = await sha256Hex(input.package);
+    const session = await request<{
+      objectPath: string;
+      token: string;
+      signedUrl: string;
+      path: string;
+      version: string;
+      channel: string;
+      packageSha256: string;
+      packageSize: number;
+    }>(`/publisher/plugins/${input.pluginId}/versions/upload-session`, {
+      method: "POST",
+      body: JSON.stringify({
+        version: input.version,
+        channel: input.channel,
+        packageSha256,
+        packageSize: input.package.size
+      })
+    });
+
+    const { error: uploadError } = await supabase.storage
+      .from("plugin-packages")
+      .uploadToSignedUrl(session.path || session.objectPath, session.token, input.package, {
+        contentType: "application/octet-stream",
+        upsert: false
+      });
+    if (uploadError) {
+      throw new PluginCenterApiError(
+        uploadError.message || "直传 Storage 失败",
+        400
+      );
+    }
+
     return request<{ version: Record<string, unknown>; scan: Record<string, unknown> }>(
-      `/publisher/plugins/${input.pluginId}/versions`,
-      { method: "POST", body: form }
+      `/publisher/plugins/${input.pluginId}/versions/finalize`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          version: input.version,
+          channel: input.channel,
+          objectPath: session.objectPath,
+          packageSha256,
+          releaseNotes: input.releaseNotes,
+          minimumLauncherVersion: input.minimumLauncherVersion
+        })
+      }
     );
   },
   submitVersion: (versionId: string, publisherNotes: string) => request<Record<string, unknown>>(
