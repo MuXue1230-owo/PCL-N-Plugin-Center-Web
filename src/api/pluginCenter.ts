@@ -114,8 +114,17 @@ const request = async <T>(path: string, init: RequestInit = {}, authenticated = 
     if (code === "WORKER_RESOURCE_LIMIT" || String(message).includes("WORKER_RESOURCE_LIMIT")) {
       message =
         "上传失败：Edge Function 算力/内存不足（WORKER_RESOURCE_LIMIT）。" +
-        "大体积 .pnp（例如多 RID 官方包）请使用直传 Storage 的 upload-session + finalize 流程，" +
-        "或减小包体积后重试。";
+        "请刷新后重试大包分块上传流程。";
+    }
+    if (
+      String(message).includes("maximum allowed size") ||
+      String(message).includes("Payload too large") ||
+      code === "413" ||
+      response.status === 413
+    ) {
+      message =
+        "Storage 拒绝了对象大小（通常是 Supabase Free 单文件 50 MB 硬限制）。" +
+        "请刷新页面后重试：前端会对 >50 MB 的 .pnp 自动拆成 40 MB 分块上传。";
     }
     throw new PluginCenterApiError(message, response.status);
   }
@@ -189,13 +198,15 @@ export const pluginCenterApi = {
     { method: "PUT", body: jsonBody(input) }
   ),
   /**
-   * Small packages (&lt; 12 MiB) still use multipart. Larger packages use:
-   * upload-session → direct Storage upload → finalize (stream scan).
-   * Avoids Cloudflare WORKER_RESOURCE_LIMIT on multi-RID .pnp uploads.
+   * Upload strategy:
+   * - &lt;12 MiB: multipart FormData through Edge (simple path)
+   * - 12–50 MiB: single signed Storage object
+   * - &gt;50 MiB: split into ≤40 MiB parts (Supabase Free hard-caps each object at 50 MB)
+   *   upload-session → upload each part → finalize (reassemble + light scan)
    */
   uploadVersion: async (input: UploadVersionInput) => {
-    const largeDirectUploadThreshold = 12 * 1024 * 1024;
-    if (input.package.size <= largeDirectUploadThreshold) {
+    const smallFormThreshold = 12 * 1024 * 1024;
+    if (input.package.size <= smallFormThreshold) {
       const form = new FormData();
       form.set("version", input.version);
       form.set("channel", input.channel);
@@ -210,14 +221,27 @@ export const pluginCenterApi = {
 
     const packageSha256 = await sha256Hex(input.package);
     const session = await request<{
+      mode: "single" | "multipart";
+      multipart?: boolean;
       objectPath: string;
-      token: string;
-      signedUrl: string;
-      path: string;
+      manifestPath?: string;
+      token?: string;
+      signedUrl?: string;
+      path?: string;
       version: string;
       channel: string;
       packageSha256: string;
       packageSize: number;
+      chunkSize: number;
+      freePlanMaxObjectBytes: number;
+      parts?: Array<{
+        index: number;
+        path: string;
+        token: string;
+        signedUrl: string;
+        uploadPath: string;
+        maxSize: number;
+      }>;
     }>(`/publisher/plugins/${input.pluginId}/versions/upload-session`, {
       method: "POST",
       body: JSON.stringify({
@@ -228,17 +252,68 @@ export const pluginCenterApi = {
       })
     });
 
+    if (session.mode === "multipart" && session.parts?.length) {
+      const uploadedParts: Array<{ index: number; path: string; size: number; sha256: string }> = [];
+      for (const part of session.parts) {
+        const start = part.index * session.chunkSize;
+        const end = Math.min(start + part.maxSize, input.package.size);
+        const slice = input.package.slice(start, end);
+        const partSha = await sha256Hex(slice);
+        const { error: uploadError } = await supabase.storage
+          .from("plugin-packages")
+          .uploadToSignedUrl(part.uploadPath || part.path, part.token, slice, {
+            contentType: "application/octet-stream",
+            upsert: false
+          });
+        if (uploadError) {
+          throw new PluginCenterApiError(
+            uploadError.message ||
+              `分块上传失败 (part ${part.index}/${session.parts.length - 1})`,
+            400
+          );
+        }
+        uploadedParts.push({
+          index: part.index,
+          path: part.path,
+          size: slice.size,
+          sha256: partSha
+        });
+      }
+
+      return request<{ version: Record<string, unknown>; scan: Record<string, unknown> }>(
+        `/publisher/plugins/${input.pluginId}/versions/finalize`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            mode: "multipart",
+            version: input.version,
+            channel: input.channel,
+            manifestPath: session.manifestPath || session.objectPath,
+            packageSha256,
+            parts: uploadedParts,
+            releaseNotes: input.releaseNotes,
+            minimumLauncherVersion: input.minimumLauncherVersion
+          })
+        }
+      );
+    }
+
+    // Single-object direct upload (&lt;= Free 50 MB object cap)
     const { error: uploadError } = await supabase.storage
       .from("plugin-packages")
-      .uploadToSignedUrl(session.path || session.objectPath, session.token, input.package, {
+      .uploadToSignedUrl(session.path || session.objectPath, session.token!, input.package, {
         contentType: "application/octet-stream",
         upsert: false
       });
     if (uploadError) {
-      throw new PluginCenterApiError(
-        uploadError.message || "直传 Storage 失败",
-        400
-      );
+      const msg = uploadError.message || "直传 Storage 失败";
+      if (msg.includes("maximum allowed size") || msg.includes("413")) {
+        throw new PluginCenterApiError(
+          "Storage 单文件超过 Free 计划 50 MB 上限。请刷新页面后重试（大包会自动分块上传）。",
+          413
+        );
+      }
+      throw new PluginCenterApiError(msg, 400);
     }
 
     return request<{ version: Record<string, unknown>; scan: Record<string, unknown> }>(
@@ -246,6 +321,7 @@ export const pluginCenterApi = {
       {
         method: "POST",
         body: JSON.stringify({
+          mode: "single",
           version: input.version,
           channel: input.channel,
           objectPath: session.objectPath,
