@@ -8,7 +8,8 @@ export default {
       docs: "开发文档",
       dashboard: "开发者工作台",
       signIn: "登录",
-      switchLanguage: "切换为英文"
+      switchLanguage: "切换为英文",
+      switchTheme: "切换亮色、暗色或跟随系统主题"
     },
     home: {
       badge: "由 PCL N 启动器原生验证",
@@ -75,6 +76,9 @@ export default {
       loadFailed: "插件信息加载失败"
     },
     categories: {
+      compatibility: "兼容性",
+      management: "管理工具",
+      ui: "界面扩展",
       tools: "实用工具",
       utility: "实用工具",
       integration: "集成服务",

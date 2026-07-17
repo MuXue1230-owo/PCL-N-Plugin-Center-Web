@@ -9,21 +9,23 @@ export interface CreateNamespaceInput {
   namespace: string;
 }
 
+export interface PluginTranslationInput {
+  displayName: string;
+  summary: string;
+  description: string;
+}
+
 export interface CreatePluginInput {
   organizationId: string;
   namespaceId: string;
   pluginId: string;
-  displayName: string;
-  summary: string;
-  description: string;
+  translations: Record<"zh-CN" | "en-US", PluginTranslationInput>;
   repositoryUrl?: string;
   visibility: string;
 }
 
 export interface UpdatePluginInput {
-  displayName: string;
-  summary: string;
-  description: string;
+  translations: Record<"zh-CN" | "en-US", PluginTranslationInput>;
   repositoryUrl?: string;
   visibility: string;
 }
@@ -54,6 +56,8 @@ export interface MarketPlugin {
   requiresPurchase: boolean;
   permissions?: string[];
   source?: string;
+  iconUrl?: string;
+  culture?: "zh-CN" | "en-US";
 }
 
 export interface MarketCategory { id: string; name: string; description?: string; }
@@ -141,15 +145,17 @@ export async function sha256Hex(blob: Blob): Promise<string> {
 const jsonBody = (value: unknown) => JSON.stringify(value);
 
 export const pluginCenterApi = {
-  listMarketPlugins: (query: { search?: string; category?: string; skip?: number; take?: number } = {}) => {
+  listMarketPlugins: (query: { search?: string; category?: string; locale?: string; skip?: number; take?: number } = {}) => {
     const parameters = new URLSearchParams();
     if (query.search) parameters.set("search", query.search);
     if (query.category) parameters.set("category", query.category);
+    if (query.locale) parameters.set("locale", query.locale);
     parameters.set("skip", String(query.skip ?? 0));
     parameters.set("take", String(query.take ?? 50));
     return request<MarketPlugin[]>(`/plugins?${parameters}`, {}, false);
   },
-  getMarketPlugin: (pluginId: string) => request<MarketPlugin>(`/plugins/${encodeURIComponent(pluginId)}`, {}, false),
+  getMarketPlugin: (pluginId: string, locale?: string) => request<MarketPlugin>(
+    `/plugins/${encodeURIComponent(pluginId)}${locale ? `?locale=${encodeURIComponent(locale)}` : ""}`, {}, false),
   listCategories: () => request<MarketCategory[]>("/categories", {}, false),
   getEntitlement: (pluginId: string) => request<{ entitled: boolean; source?: string }>(`/plugins/${encodeURIComponent(pluginId)}/entitlement`),
   redeemPurchase: (pluginId: string, orderNumber: string, overpaymentDestination: string) => request<Record<string, unknown>>(
@@ -197,6 +203,13 @@ export const pluginCenterApi = {
     `/publisher/plugins/${pluginId}`,
     { method: "PUT", body: jsonBody(input) }
   ),
+  uploadPluginIcon: (pluginId: string, icon: File) => {
+    const form = new FormData();
+    form.set("icon", icon);
+    return request<Record<string, unknown>>(`/publisher/plugins/${pluginId}/icon`, { method: "POST", body: form });
+  },
+  removePluginIcon: (pluginId: string) => request<{ removed: boolean }>(
+    `/publisher/plugins/${pluginId}/icon`, { method: "DELETE" }),
   /**
    * Upload strategy:
    * - &lt;12 MiB: multipart FormData through Edge (simple path)

@@ -13,7 +13,10 @@
       <article v-else-if="plugin">
         <section class="headline">
           <div class="identity">
-            <div class="plugin-icon">{{ pluginInitial }}</div>
+            <div class="plugin-icon">
+              <img v-if="plugin.iconUrl && !iconBroken" :src="plugin.iconUrl" alt="" @error="iconBroken = true" />
+              <span v-else>{{ pluginInitial }}</span>
+            </div>
             <div>
               <span class="category">{{ categoryLabel(plugin.category) }}</span>
               <h1>{{ plugin.name }}</h1>
@@ -81,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from "vue";
+import { computed, onMounted, ref, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
@@ -102,6 +105,8 @@ const redeeming = ref(false);
 const acting = ref(false);
 const orderNumber = ref("");
 const destination = ref("publisher");
+const iconBroken = ref(false);
+const apiLocale = computed(() => locale.value === "zh" ? "zh-CN" : "en-US");
 
 const money = (cents: number) => new Intl.NumberFormat(locale.value === "zh" ? "zh-CN" : "en-US", {
   style: "currency",
@@ -185,13 +190,11 @@ const redeem = async () => {
   }
 };
 
-watchEffect(() => {
-  document.title = plugin.value ? `${plugin.value.name} · ${t("project.title")}` : t("project.title");
-  document.documentElement.lang = locale.value === "zh" ? "zh-CN" : "en-US";
-});
-onMounted(async () => {
+const loadPlugin = async () => {
+  loading.value = true;
   try {
-    plugin.value = await pluginCenterApi.getMarketPlugin(String(route.params.pluginId));
+    plugin.value = await pluginCenterApi.getMarketPlugin(String(route.params.pluginId), apiLocale.value);
+    iconBroken.value = false;
     if (userStore.token) {
       entitled.value = (await pluginCenterApi.getEntitlement(plugin.value.pluginId)).entitled;
     } else if (plugin.value.pricingModel === "free") {
@@ -202,7 +205,13 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+};
+watch(apiLocale, () => void loadPlugin());
+watchEffect(() => {
+  document.title = plugin.value ? `${plugin.value.name} · ${t("project.title")}` : t("project.title");
+  document.documentElement.lang = locale.value === "zh" ? "zh-CN" : "en-US";
 });
+onMounted(loadPlugin);
 </script>
 
 <style scoped lang="scss">
@@ -241,7 +250,8 @@ onMounted(async () => {
 .loading-card p { margin: 20px 0 0; color: var(--market-muted); text-align: center; }
 .headline { padding: 58px 0 50px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 60px; align-items: center; }
 .identity { display: flex; align-items: flex-start; gap: 22px; }
-.plugin-icon { width: 72px; height: 72px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 20px; color: #fff; background: linear-gradient(145deg, #667cff, #8a54ee); box-shadow: 0 16px 38px rgba(100, 91, 238, .25); font-size: 28px; font-weight: 850; }
+.plugin-icon { width: 72px; height: 72px; overflow: hidden; flex: 0 0 auto; display: grid; place-items: center; border-radius: 20px; color: #fff; background: linear-gradient(145deg, #667cff, #8a54ee); box-shadow: 0 16px 38px rgba(100, 91, 238, .25); font-size: 28px; font-weight: 850; }
+.plugin-icon img { width: 100%; height: 100%; object-fit: cover; }
 .category { color: var(--market-accent); font-size: 12px; font-weight: 750; letter-spacing: .06em; }
 .identity h1 { margin: 8px 0 12px; font-size: clamp(42px, 6vw, 68px); line-height: 1.05; letter-spacing: -.055em; }
 .identity p { max-width: 650px; margin: 0; color: var(--market-muted); font-size: 16px; line-height: 1.75; }

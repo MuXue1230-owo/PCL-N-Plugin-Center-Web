@@ -8,7 +8,8 @@ export default {
       docs: "Documentation",
       dashboard: "Developer Console",
       signIn: "Sign in",
-      switchLanguage: "Switch to Chinese"
+      switchLanguage: "Switch to Chinese",
+      switchTheme: "Switch light, dark, or system theme"
     },
     home: {
       badge: "Verified natively by the PCL N launcher",
@@ -75,6 +76,9 @@ export default {
       loadFailed: "Unable to load plugin information"
     },
     categories: {
+      compatibility: "Compatibility",
+      management: "Management",
+      ui: "UI extensions",
       tools: "Utilities",
       utility: "Utilities",
       integration: "Integrations",

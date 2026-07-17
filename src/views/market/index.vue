@@ -60,7 +60,10 @@
               class="plugin-card"
             >
               <div class="plugin-card-top">
-                <span class="plugin-icon">{{ pluginInitial(plugin.name) }}</span>
+                <span class="plugin-icon">
+                  <img v-if="plugin.iconUrl && !brokenIcons.has(plugin.pluginId)" :src="plugin.iconUrl" alt="" @error="markIconBroken(plugin.pluginId)" />
+                  <span v-else>{{ pluginInitial(plugin.name) }}</span>
+                </span>
                 <span class="price">{{ plugin.pricingModel === "free" ? t("market.home.free") : money(plugin.priceCents) }}</span>
               </div>
               <div class="plugin-category">{{ pluginCategory(plugin.category) }}</div>
@@ -90,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from "vue";
+import { computed, onMounted, ref, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import MarketHeader from "@/components/market/MarketHeader.vue";
 import { pluginCenterApi, type MarketCategory, type MarketPlugin } from "@/api/pluginCenter";
@@ -102,6 +105,11 @@ const loading = ref(false);
 const error = ref("");
 const plugins = ref<MarketPlugin[]>([]);
 const categories = ref<MarketCategory[]>([]);
+const brokenIcons = ref(new Set<string>());
+const apiLocale = computed(() => locale.value === "zh" ? "zh-CN" : "en-US");
+const markIconBroken = (pluginId: string) => {
+  brokenIcons.value = new Set(brokenIcons.value).add(pluginId);
+};
 
 const categoryLabel = (item: MarketCategory) => {
   const key = `market.categories.${item.id}`;
@@ -127,7 +135,7 @@ const load = async () => {
   loading.value = true;
   error.value = "";
   try {
-    plugins.value = await pluginCenterApi.listMarketPlugins({ search: search.value, category: category.value, take: 100 });
+    plugins.value = await pluginCenterApi.listMarketPlugins({ search: search.value, category: category.value, locale: apiLocale.value, take: 100 });
   } catch (e) {
     error.value = e instanceof Error && !(e instanceof TypeError) ? e.message : t("market.home.loadFailed");
   } finally {
@@ -139,6 +147,8 @@ const selectCategory = async (id: string) => {
   await load();
 };
 
+watch(apiLocale, () => void load());
+watch(apiLocale, () => void load());
 watchEffect(() => {
   document.title = t("project.title");
   document.documentElement.lang = locale.value === "zh" ? "zh-CN" : "en-US";
@@ -225,7 +235,8 @@ onMounted(async () => {
 .plugin-card { min-height: 312px; padding: 20px; display: flex; flex-direction: column; border: 1px solid var(--market-border); border-radius: 17px; color: var(--market-text); background: var(--market-surface); box-shadow: 0 9px 24px rgba(30, 41, 78, .045); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
 .plugin-card:hover { transform: translateY(-3px); border-color: rgba(88, 112, 244, .38); box-shadow: 0 18px 36px rgba(42, 52, 95, .12); }
 .plugin-card-top { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
-.plugin-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #667cff, #8a54ee); box-shadow: 0 10px 25px rgba(100, 91, 238, .22); font-size: 20px; font-weight: 800; }
+.plugin-icon { width: 48px; height: 48px; overflow: hidden; display: grid; place-items: center; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #667cff, #8a54ee); box-shadow: 0 10px 25px rgba(100, 91, 238, .22); font-size: 20px; font-weight: 800; }
+.plugin-icon img { width: 100%; height: 100%; object-fit: cover; }
 .price { padding: 5px 9px; border-radius: 8px; color: var(--market-accent); background: var(--market-accent-soft); font-size: 12px; font-weight: 750; }
 .plugin-category { margin-top: 20px; color: var(--market-accent); font-size: 11px; font-weight: 750; letter-spacing: .04em; }
 .plugin-card h3 { margin: 7px 0 8px; font-size: 20px; letter-spacing: -.02em; }

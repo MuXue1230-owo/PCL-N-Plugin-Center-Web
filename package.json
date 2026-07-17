@@ -1,7 +1,7 @@
 {
   "name": "pcl-n-plugin-center-web",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "author": {
     "name": "PCL.N contributors",

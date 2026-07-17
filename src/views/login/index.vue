@@ -41,7 +41,7 @@
         <div class="login-links">
           <a href="https://pcln.top/#/market">浏览插件市场</a>
           <a href="https://docs.pcln.top/" target="_blank" rel="noreferrer">插件开发文档</a>
-          <a href="https://github.com/MuXue1230-owo/PCL-N-Plugin-Center-Web" target="_blank" rel="noreferrer">
+          <a href="https://github.com/PCL-N-Edition/PCL-N-Plugin-Center-Web" target="_blank" rel="noreferrer">
             查看开源管理端
           </a>
         </div>
